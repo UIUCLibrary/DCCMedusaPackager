@@ -141,7 +141,7 @@ class TestFind_package_files(TestCase):
         raw_data = sorted(self.package.split_items(MedusaPackager.dash_grouper), key=lambda x: x.package_name)[0]
         data = raw_data.sorted()
         jobs = sorted(data.generate_deployment("/tmp"), key=lambda x: x.source)
-        self.assertEqual(jobs[0].destination,
-                         "/tmp/3901805_ChicagoProfessionalCampus_1960/access/3901805_ChicagoProfessionalCampus_1960-61.tif")
-        self.assertEqual(jobs[0].source,
-                         "sample/20160429_MappingHsitory_mm/3901805/access/3901805_ChicagoProfessionalCampus_1960-61.tif")
+        self.assertEqual(os.path.normpath(jobs[0].destination),
+                         os.path.normpath("/tmp/3901805_ChicagoProfessionalCampus_1960/access/3901805_ChicagoProfessionalCampus_1960-61.tif"))
+        self.assertEqual(os.path.normpath(jobs[0].source),
+                         os.path.normpath("sample/20160429_MappingHsitory_mm/3901805/access/3901805_ChicagoProfessionalCampus_1960-61.tif"))
