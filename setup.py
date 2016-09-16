@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='MedusaPackager',
     version='0.0.1',
-    packages=['MedusaPackager', 'scripts'],
+    packages=['MedusaPackager', 'scripts', 'tests'],
     entry_points={'console_scripts': ['packagemedusa = scripts.process:main']},
     url='',
     license='',
