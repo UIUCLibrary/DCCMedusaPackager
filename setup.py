@@ -9,5 +9,5 @@ setup(
     license='',
     author='Henry Borchers',
     author_email='hborcher@illinois.edu',
-    description=''
+    description='Script for packaging DCC files for ingesting into Medusa'
 )
