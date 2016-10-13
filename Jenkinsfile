@@ -17,7 +17,7 @@ node {
 node {
     stage("Building documentation"){
         unstash 'pysource'
-        sh 'make docs'
+        sh 'make html -C ./docs -e ./dist/docs'
     }
     stage("Packaging source"){
 
