@@ -8,8 +8,9 @@ setup(
         'console_scripts': ['packagemedusa = scripts.process:main']
     },
     url='https://github.com/UIUCLibrary/DCCMedusaPackager',
+    test_suite='tests',
     license='',
     author='Henry Borchers',
     author_email='hborcher@illinois.edu',
-    description='Script for packaging DCC files for ingesting into Medusa'
+    description='Script for packaging DCC files for ingesting into Medusa',
 )
