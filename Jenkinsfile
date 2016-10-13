@@ -15,12 +15,17 @@ node {
 }
 
 node {
+
+
     stage("Building documentation"){
         unstash 'pysource'
-        sh 'make html -C ./docs -e ./dist/docs'
-    }
-    stage("Packaging source"){
+        sh '$PYTHON3 setup.py build_sphinx'
+    } catch (error) {
+        echo 'Unable to build build_sphinx documentation.'
 
+    }
+
+    stage("Building source distribution"){
         sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'
 
