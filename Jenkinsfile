@@ -42,9 +42,6 @@ node {
 
 node{
     stage("Building source distribution"){
-        try{
-        unstash 'sphinx_docs'
-        }
         unstash 'pysource'
         sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'
