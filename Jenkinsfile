@@ -28,9 +28,10 @@ node {
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'
             }
-        } catch (error) {
-            echo 'Unable to build build_sphinx documentation.'
+
         }
+    } catch (error) {
+        echo 'Unable to build build_sphinx documentation.'
     }
 }
 node{
