@@ -8,17 +8,37 @@ import MedusaPackager
 
 
 class Processor:
+    """
+    Abstract base class for any addition type of jobs that need to be done. Intended to make building addition
+    operations from a factory function.
+    """
     def process(self, source, destination):
         pass
 
 
 class MoveWorker(Processor):
+    """
+    Used for moving files.
+    """
     def process(self, source, destination):
+        """
+        Used for moving files.
+        :param source: File to be moved.
+        :param destination: Destination path for the file to be move to.
+        """
         shutil.move(source, destination)
 
 
 class CopyWorker(Processor):
+    """
+    Used for copy files.
+    """
     def process(self, source, destination):
+        """
+        Used for copy files.
+        :param source: File to be copied.
+        :param destination: Destination path for the file to be copied to.
+        """
         shutil.copy2(source, destination)
 
 
@@ -52,9 +72,13 @@ def setup():
 
 
 
-
-
 def get_worker(args):
+    """
+    Factory function that parses the arguments and returns that type of job that needs to be performed. Whether it's
+    a copy or a move.
+    :param args:
+    :return:
+    """
     if args.copy:
         return CopyWorker()
     else:
