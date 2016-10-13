@@ -31,8 +31,8 @@ node {
 
         stage("Packaging Documentation"){
             unstash 'sphinx_docs'
-            sh 'tar -czvf DCC_MigrationToolsDocs.tar.gz html'
-            archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
+            sh 'tar -czvf sphinx_docs.tar.gz html'
+            archiveArtifacts artifacts: 'sphinx_docs.tar.gz'
         }
 
     } catch(error) {
