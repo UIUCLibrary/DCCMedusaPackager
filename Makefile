@@ -26,8 +26,7 @@ install: docs
 	@$(PYTHON) setup.py install
 docs: install-sphinx
 	@echo 'creating Sphinx documentation'
-	make html -C ./docs -e BUILDDIR=$(DOC_BUILD)
-
+	@$(PYTHON) setup.py build_sphinx
 tox-test: install-tox
 	@echo 'running tox tests'
 	@$(TOX)
