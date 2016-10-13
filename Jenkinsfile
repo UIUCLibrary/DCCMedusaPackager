@@ -15,9 +15,12 @@ node {
 }
 
 node {
-
-    stage("Packaging source"){
+    stage("Building documentation"){
         unstash 'pysource'
+        sh 'make docs'
+    }
+    stage("Packaging source"){
+
         sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'
 
