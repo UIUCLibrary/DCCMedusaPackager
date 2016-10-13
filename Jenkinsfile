@@ -19,10 +19,11 @@ node {
 
     stage("Building documentation"){
         unstash 'pysource'
-        sh '$PYTHON3 setup.py build_sphinx'
-    } catch (error) {
-        echo 'Unable to build build_sphinx documentation.'
-
+        tr{
+            sh '$PYTHON3 setup.py build_sphinx'
+        } catch (error) {
+            echo 'Unable to build build_sphinx documentation.'
+        }
     }
 
     stage("Building source distribution"){
