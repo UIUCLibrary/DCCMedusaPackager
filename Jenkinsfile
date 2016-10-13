@@ -15,25 +15,31 @@ node {
 }
 
 node {
-
-
-    try{
-        stage("Building documentation"){
+    try {
+        stage("Generating Documentation"){
             unstash 'pysource'
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             sh '. ./venv_doc/bin/activate && \
             pip install Sphinx && \
             python setup.py build_sphinx'
+
             dir('docs/build'){
                 stash includes: '**', name: 'sphinx_docs'
             }
-
         }
-    } catch (error) {
-        echo 'Unable to build build_sphinx documentation.'
+
+        stage("Packaging Documentation"){
+            unstash 'sphinx_docs'
+            sh 'tar -czvf DCC_MigrationToolsDocs.tar.gz html'
+            archiveArtifacts artifacts: 'DCC_MigrationToolsDocs.tar.gz'
+        }
+
+    } catch(error) {
+        echo 'Unable to generate Sphinx documentation'
     }
 }
+
 node{
     stage("Building source distribution"){
         try{
