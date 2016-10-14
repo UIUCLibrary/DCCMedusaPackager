@@ -8,8 +8,8 @@ make html
 cd ..
 
 git add docs/build/html
-git commit -m "Building and publishing docs"
-git push origin master
+#git commit -m "Building and publishing docs"
+#git push origin master
 
 set +e
 git checkout gh-pages
