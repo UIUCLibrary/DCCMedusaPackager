@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo 'hello'
+echo 'Running the update GitHub Pages script'
 
 cd docs
 make clean
