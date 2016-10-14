@@ -21,13 +21,13 @@ It's that simple!
 
             $ packagemedusa -h
 
-            usage: packagemedusa [-h] [--copy] source destination
+              usage: packagemedusa [-h] [--copy] source destination
 
-            positional arguments:
-              source       Directory for files to be sorted
-              destination  Directory to put the new files
+              positional arguments:
+                source       Directory for files to be sorted
+                destination  Directory to put the new files
 
-            optional arguments:
-              -h, --help   show this help message and exit
-              --copy       Copy files instead of moving them.
+              optional arguments:
+                -h, --help   show this help message and exit
+                --copy       Copy files instead of moving them.
 
