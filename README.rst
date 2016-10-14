@@ -23,3 +23,7 @@ Installation from the Command Line From Source
         py -3 setup.py install
 
 All finished! The script should now be installed on your system.
+
+Links
+-----
+`Documentation page <https://uiuclibrary.github.io/DCCMedusaPackager>`_
