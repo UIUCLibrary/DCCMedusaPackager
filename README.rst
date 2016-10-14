@@ -23,3 +23,5 @@ Installation from the Command Line From Source
         py -3 setup.py install
 
 All finished! The script should now be installed on your system.
+
+.. include:: docs/source/about.rst
