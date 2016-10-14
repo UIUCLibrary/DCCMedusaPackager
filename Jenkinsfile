@@ -16,7 +16,7 @@ node {
 
 node {
     try {
-        stage("Generating Documentation for records"){
+        stage("Generating Documentation for Archive"){
             unstash 'pysource'
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
@@ -35,12 +35,14 @@ node {
             archiveArtifacts artifacts: 'sphinx_docs.tar.gz'
         }
 
+        /* Turning this off until I can get git creds set up for jenkins server
         stage("Building and updating documentation for github pages") {
             unstash 'pysource'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
             sh '. ./venv_doc/bin/activate && \
             pip install Sphinx && sh publishDocs.sh'
         }
+        */
 
     } catch(error) {
         echo 'Unable to generate Sphinx documentation'
