@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
-
+set -e
 echo 'Running the update GitHub Pages script'
 
-cd adsasd
 
-cd docs
-make clean
-make html
-cd ..
+cd docs && make clean && make html
 
-git add docs/build/html
 #git commit -m "Building and publishing docs"
-#git push origin master
-
-set +e
+##git push origin master
+#
 git checkout gh-pages
 rm -rf .
 touch .nojekyll
