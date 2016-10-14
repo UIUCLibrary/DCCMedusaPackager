@@ -16,7 +16,7 @@ node {
 
 node {
     try {
-        stage("Generating Documentation"){
+        stage("Generating Documentation for records"){
             unstash 'pysource'
             echo 'Creating virtualenv for generating docs'
             sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
@@ -29,10 +29,15 @@ node {
             }
         }
 
-        stage("Packaging Documentation"){
+        stage("Archiving Documentation"){
             unstash 'sphinx_docs'
             sh 'tar -czvf sphinx_docs.tar.gz html'
             archiveArtifacts artifacts: 'sphinx_docs.tar.gz'
+        }
+
+        stage("Building and updating documentation for github pages") {
+            unstash 'pysource'
+            sh 'sh publishDocs.sh'
         }
 
     } catch(error) {
