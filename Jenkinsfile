@@ -48,7 +48,10 @@ node {
 node{
     stage("Building source distribution"){
         unstash 'pysource'
-        sh '$PYTHON3 setup.py sdist'
+        sh '$PYTHON3 -m virtualenv -p $PYTHON3 venv_doc'
+            sh '. ./venv_doc/bin/activate && \
+            pip install Sphinx && \
+            sh '$PYTHON3 setup.py sdist'
         archiveArtifacts artifacts: 'dist/*.tar.gz'
 
     }
