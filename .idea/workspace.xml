@@ -2,57 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="42bc8a2f-6d8a-44a4-9768-d8f2222fa462" name="Default" comment="returned missing folder">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/source/full_mark_horz_bw.eps" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/Makefile" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/make.bat" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/source/conf.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.nojekyll" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/MedusaPackager.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/ajax-loader.gif" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/alabaster.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/basic.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/comment-bright.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/comment-close.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/comment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/custom.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/doctools.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/down-pressed.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/down.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/file.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/jquery-1.11.1.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/jquery.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/minus.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/plus.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/pygments.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/searchtools.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/underscore-1.3.1.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/underscore.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/up-pressed.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/up.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/_static/websupport.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/about.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/contents.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/genindex.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/index.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/installSourceCLI.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/installation.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/objects.inv" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/py-modindex.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/requirements.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/search.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/searchindex.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/usage.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/usageCLI.html" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/MedusaPackager.txt" afterPath="$PROJECT_DIR$/docs/source/MedusaPackager.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/about.txt" afterPath="$PROJECT_DIR$/docs/source/about.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/contents.txt" afterPath="$PROJECT_DIR$/docs/source/contents.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/index.txt" afterPath="$PROJECT_DIR$/docs/source/index.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/installSourceCLI.txt" afterPath="$PROJECT_DIR$/docs/source/installSourceCLI.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/installation.txt" afterPath="$PROJECT_DIR$/docs/source/installation.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/requirements.txt" afterPath="$PROJECT_DIR$/docs/source/requirements.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/usage.txt" afterPath="$PROJECT_DIR$/docs/source/usage.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/usageCLI.txt" afterPath="$PROJECT_DIR$/docs/source/usageCLI.rst" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/full_mark_horz_bw.gif" afterPath="$PROJECT_DIR$/docs/source/full_mark_horz_bw.gif" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/publishDocs.sh" afterPath="$PROJECT_DIR$/publishDocs.sh" />
     </list>
@@ -93,9 +42,11 @@
       <file leaf-file-name="publishDocs.sh" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/publishDocs.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="9" column="12" selection-start-line="9" selection-start-column="12" selection-end-line="9" selection-end-column="12" />
-              <folding />
+            <state relative-caret-position="60">
+              <caret line="4" column="9" selection-start-line="4" selection-start-column="9" selection-end-line="4" selection-end-column="9" />
+              <folding>
+                <marker date="1476461862000" expanded="false" signature="79:452" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -218,24 +169,6 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="docs" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="DCCMedusaPackager" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="DCCMedusaPackager" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="docs" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="build" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -598,12 +531,19 @@
       <option name="project" value="LOCAL" />
       <updated>1476461558784</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="fixed missing folder again.">
+      <created>1476461802300</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1476461802300</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="40" y="23" width="1080" height="832" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32972974" sideWeight="0.49713877" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Regex Tester" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -613,7 +553,7 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4027027" sideWeight="0.605973" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22837839" sideWeight="0.8131021" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26107898" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26107898" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24964234" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -650,7 +590,8 @@
     <MESSAGE value="updated banner message" />
     <MESSAGE value="make fail on git issues" />
     <MESSAGE value="returned missing folder" />
-    <option name="LAST_COMMIT_MESSAGE" value="returned missing folder" />
+    <MESSAGE value="fixed missing folder again." />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed missing folder again." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -943,9 +884,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/publishDocs.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="9" column="12" selection-start-line="9" selection-start-column="12" selection-end-line="9" selection-end-column="12" />
-          <folding />
+        <state relative-caret-position="60">
+          <caret line="4" column="9" selection-start-line="4" selection-start-column="9" selection-end-line="4" selection-end-column="9" />
+          <folding>
+            <marker date="1476461862000" expanded="false" signature="79:452" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>

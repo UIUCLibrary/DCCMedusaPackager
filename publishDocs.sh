@@ -2,6 +2,8 @@
 
 echo 'Running the update GitHub Pages script'
 
+cd adsasd
+
 cd docs
 make clean
 make html
