@@ -12,6 +12,13 @@ node {
         unstash 'pysource'
         sh '$TOX'
         junit '**/junit-*.xml'
+        publishHTML([allowMissing: false,
+                     alwaysLinkToLastBuild: false,
+                     keepAll: false,
+                     reportDir: 'htmlcov',
+                     reportFiles: 'index.html',
+                     reportName: 'Coverage Report'])
+
     }
 }
 
