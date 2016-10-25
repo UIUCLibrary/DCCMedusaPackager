@@ -1,6 +1,6 @@
-PYTHON      = python
-PIP         = pip
-TOX         = tox
+PYTHON      ?= python
+PIP         ?= pip
+TOX         ?= tox
 current_dir = $(shell pwd)
 MANPATH     = $(HOME)/.local/share/man
 DOC_BUILD   = $(current_dir)/docs/build
