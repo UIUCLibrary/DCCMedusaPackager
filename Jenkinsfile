@@ -18,6 +18,12 @@ node {
                      reportDir: 'htmlcov',
                      reportFiles: 'index.html',
                      reportName: 'Coverage Report'])
+        publishHTML([allowMissing: false,
+                     alwaysLinkToLastBuild: false,
+                     keepAll: false,
+                     reportDir: 'mypy_report',
+                     reportFiles: 'index.html',
+                     reportName: 'MyPy Report'])
 
     }
 }
