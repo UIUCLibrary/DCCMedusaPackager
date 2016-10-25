@@ -8,6 +8,7 @@ node {
 node {
 
     stage("Running Tox"){
+        env.PATH = "$(dirname $PYTHON3):${env.PATH}"
         unstash 'pysource'
         sh '$TOX'
         junit '**/junit-*.xml'
