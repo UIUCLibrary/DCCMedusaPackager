@@ -2,10 +2,10 @@ from setuptools import setup
 
 setup(
     name='DCCMedusaPackager',
-    version='0.0.1',
-    packages=['MedusaPackager', 'scripts', 'tests'],
+    version='0.0.2',
+    packages=['MedusaPackager'],
     entry_points={
-        'console_scripts': ['packagemedusa=process:main']
+        'console_scripts': ['packagemedusa=processcli:main']
     },
     url='https://github.com/UIUCLibrary/DCCMedusaPackager',
     scripts=['scripts/processcli.py'],
