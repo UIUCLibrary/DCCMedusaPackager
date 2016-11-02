@@ -22,8 +22,10 @@ node {
 }
 stage("Running static static analysis reports") {
   parallel coverage: {
+      echo "Running Coverage"
       runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
     }, mypy: {
+        echo "MyPy"
         runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
       }
 }
