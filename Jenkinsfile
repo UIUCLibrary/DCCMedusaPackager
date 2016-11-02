@@ -23,6 +23,7 @@ node {
 parallel coverage: {
   stage("Running Tox: Coverage"){
     runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
+  }
   }, mypy: {
     stage("Running Tox: MyPy"){
       runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
