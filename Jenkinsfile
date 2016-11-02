@@ -24,6 +24,11 @@ node {
 stage("Running Tox: Coverage"){
   runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
 }
+stage("Running Tox: MyPy"){
+  runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
+}
+
+
 def runTox(env, reportDir, reportFiles, reportName)
 {
     node {
@@ -51,21 +56,21 @@ def runTox(env, reportDir, reportFiles, reportName)
 //                      reportName: 'Coverage Report'])
 //     }
 // }
-node {
-
-    stage("Running Tox: MyPy"){
-        env.PATH = "${env.PYTHON3}/..:${env.PATH}"
-        unstash 'pysource'
-        sh '$TOX -e mypy'
-        publishHTML([allowMissing: false,
-                     alwaysLinkToLastBuild: false,
-                     keepAll: false,
-                     reportDir: 'mypy_report',
-                     reportFiles: 'index.html',
-                     reportName: 'MyPy Report'])
-
-    }
-}
+// node {
+//
+//     stage("Running Tox: MyPy"){
+//         env.PATH = "${env.PYTHON3}/..:${env.PATH}"
+//         unstash 'pysource'
+//         sh '$TOX -e mypy'
+//         publishHTML([allowMissing: false,
+//                      alwaysLinkToLastBuild: false,
+//                      keepAll: false,
+//                      reportDir: 'mypy_report',
+//                      reportFiles: 'index.html',
+//                      reportName: 'MyPy Report'])
+//
+//     }
+// }
 
 node {
     try {
