@@ -33,9 +33,10 @@ stage("Running static static analysis reports") {
 def runTox(environment, reportDir, reportFiles, reportName)
 {
     node {
-      unstash 'pysource'
+
       String command = "$TOX -e ${environment}"
       echo command
+      unstash 'pysource'
       sh command
       publishHTML([allowMissing: false,
                    alwaysLinkToLastBuild: false,
