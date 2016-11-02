@@ -9,17 +9,35 @@ node {
 
 node {
 
-    stage("Running Tox"){
+    stage("Running Tox: Python 3.5 Unit tests"){
         env.PATH = "${env.PYTHON3}/..:${env.PATH}"
         unstash 'pysource'
-        sh '$TOX'
+        sh '$TOX -e py35'
         junit '**/junit-*.xml'
+
+
+    }
+}
+node {
+
+    stage("Running Tox: Coverage"){
+        env.PATH = "${env.PYTHON3}/..:${env.PATH}"
+        unstash 'pysource'
+        sh '$TOX -e coverage'
         publishHTML([allowMissing: false,
                      alwaysLinkToLastBuild: false,
                      keepAll: false,
                      reportDir: 'htmlcov',
                      reportFiles: 'index.html',
                      reportName: 'Coverage Report'])
+    }
+}
+node {
+
+    stage("Running Tox: MyPy"){
+        env.PATH = "${env.PYTHON3}/..:${env.PATH}"
+        unstash 'pysource'
+        sh '$TOX -e mypy'
         publishHTML([allowMissing: false,
                      alwaysLinkToLastBuild: false,
                      keepAll: false,
