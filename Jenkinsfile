@@ -28,6 +28,7 @@ parallel coverage: {
       echo "Running MyPy report"
       runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
     }
+
 parallel documentation: {
   node {
     echo 'Building documentation'
@@ -64,17 +65,17 @@ parallel documentation: {
           echo 'Unable to generate Sphinx documentation'
       }
   }
-} sourceDist:{
-  node{
-      echo 'Building source distribution'
-      stage("Building source distribution"){
-          unstash 'pysource'
-          sh '$PYTHON3 setup.py sdist'
-          archiveArtifacts artifacts: 'dist/*.tar.gz'
+}, sourceDist: {
+    node{
+        echo 'Building source distribution'
+        stage("Building source distribution"){
+            unstash 'pysource'
+            sh '$PYTHON3 setup.py sdist'
+            archiveArtifacts artifacts: 'dist/*.tar.gz'
 
-      }
+        }
+    }
   }
-}
 
 def runTox(environment, reportDir, reportFiles, reportName)
 {
