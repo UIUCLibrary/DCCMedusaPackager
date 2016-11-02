@@ -32,7 +32,9 @@ def runTox(env, reportDir, reportFiles, reportName)
 {
     node {
       unstash 'pysource'
-      sh "$TOX -e ${env}"
+      String command = "$TOX -e ${env}"
+      echo command
+      sh command
       publishHTML([allowMissing: false,
                    alwaysLinkToLastBuild: false,
                    keepAll: false,
