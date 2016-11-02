@@ -100,13 +100,13 @@ def find_package_files(path)->MedusaPackageData:
     for root, dirs, files in os.walk(path):
         for _file in files:
             if _file in SYSTEM_FILES:
-                new_package.ignored_files.append(os.path.normcase(os.path.join(root, _file)))
+                new_package.ignored_files.append(os.path.normpath(os.path.join(root, _file)))
                 continue
             if os.path.splitext(_file)[1].lower() not in VALID_IMAGE_EXTENSIONS:
-                new_package.ignored_files.append(os.path.normcase(os.path.join(root, _file)))
+                new_package.ignored_files.append(os.path.normpath(os.path.join(root, _file)))
                 continue
 
-            new_package.unsorted_files.append(os.path.normcase(os.path.join(root, _file)))
+            new_package.unsorted_files.append(os.path.normpath(os.path.join(root, _file)))
     return new_package
 
 
