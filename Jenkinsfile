@@ -20,17 +20,13 @@ node {
 
     }
 }
-parallel coverage: {
-  stage("Running Tox: Coverage"){
-    runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
-  }
-  }, mypy: {
-    stage("Running Tox: MyPy"){
-      runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
-    }
-  }
+stage("Running static static analysis reports") {
+  parallel coverage: {
+      runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
+    }, mypy: {
+        runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
+      }
 }
-
 
 def runTox(env, reportDir, reportFiles, reportName)
 {
