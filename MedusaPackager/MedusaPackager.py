@@ -26,7 +26,7 @@ def identify_filetype(path):
     parent = os.path.normpath(path).split(os.path.sep)[-1]
     if parent == "access":
         return FileTypes.ACCESS
-    elif parent == "preservation master":
+    elif parent == "preservation":
         return FileTypes.PRESERVATION
 
 

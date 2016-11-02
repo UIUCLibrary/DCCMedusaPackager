@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='DCCMedusaPackager',
-    version='0.0.2',
+    version='0.0.3',
     packages=['MedusaPackager'],
     entry_points={
         'console_scripts': ['packagemedusa=processcli:main']
