@@ -20,12 +20,14 @@ node {
 
     }
 }
-
-stage("Running Tox: Coverage"){
-  runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
-}
-stage("Running Tox: MyPy"){
-  runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
+parallel coverage: {
+  stage("Running Tox: Coverage"){
+    runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
+  }, mypy: {
+    stage("Running Tox: MyPy"){
+      runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
+    }
+  }
 }
 
 
@@ -42,35 +44,6 @@ def runTox(env, reportDir, reportFiles, reportName)
                    reportName: "${reportName}"])
     }
 }
-// node {
-//
-//     stage("Running Tox: Coverage"){
-//         env.PATH = "${env.PYTHON3}/..:${env.PATH}"
-//         unstash 'pysource'
-//         sh '$TOX -e coverage'
-//         publishHTML([allowMissing: false,
-//                      alwaysLinkToLastBuild: false,
-//                      keepAll: false,
-//                      reportDir: 'htmlcov',
-//                      reportFiles: 'index.html',
-//                      reportName: 'Coverage Report'])
-//     }
-// }
-// node {
-//
-//     stage("Running Tox: MyPy"){
-//         env.PATH = "${env.PYTHON3}/..:${env.PATH}"
-//         unstash 'pysource'
-//         sh '$TOX -e mypy'
-//         publishHTML([allowMissing: false,
-//                      alwaysLinkToLastBuild: false,
-//                      keepAll: false,
-//                      reportDir: 'mypy_report',
-//                      reportFiles: 'index.html',
-//                      reportName: 'MyPy Report'])
-//
-//     }
-// }
 
 node {
     try {
