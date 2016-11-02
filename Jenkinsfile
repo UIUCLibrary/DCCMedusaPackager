@@ -7,6 +7,8 @@ node {
     }
 }
 
+
+
 node {
 
     stage("Running Tox: Python 3.5 Unit tests"){
@@ -18,20 +20,37 @@ node {
 
     }
 }
-node {
 
-    stage("Running Tox: Coverage"){
-        env.PATH = "${env.PYTHON3}/..:${env.PATH}"
-        unstash 'pysource'
-        sh '$TOX -e coverage'
-        publishHTML([allowMissing: false,
-                     alwaysLinkToLastBuild: false,
-                     keepAll: false,
-                     reportDir: 'htmlcov',
-                     reportFiles: 'index.html',
-                     reportName: 'Coverage Report'])
+stage("Running Tox: Coverage"){
+  runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
+}
+def runTox(env, reportDir, reportFiles, reportName)
+{
+    node {
+      unstash 'pysource'
+      sh '$TOX -e coverage'
+      publishHTML([allowMissing: false,
+                   alwaysLinkToLastBuild: false,
+                   keepAll: false,
+                   reportDir: "${reportDir}",
+                   reportFiles: "${reportFiles}",
+                   reportName: "${reportName}"])
     }
 }
+// node {
+//
+//     stage("Running Tox: Coverage"){
+//         env.PATH = "${env.PYTHON3}/..:${env.PATH}"
+//         unstash 'pysource'
+//         sh '$TOX -e coverage'
+//         publishHTML([allowMissing: false,
+//                      alwaysLinkToLastBuild: false,
+//                      keepAll: false,
+//                      reportDir: 'htmlcov',
+//                      reportFiles: 'index.html',
+//                      reportName: 'Coverage Report'])
+//     }
+// }
 node {
 
     stage("Running Tox: MyPy"){
