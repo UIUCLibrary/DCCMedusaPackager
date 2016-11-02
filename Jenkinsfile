@@ -20,7 +20,7 @@ node {
 
     }
 }
-stage("Running static static analysis reports") {
+// stage("Running static static analysis reports") {
   parallel coverage: {
       echo "Running Coverage report"
       runTox("coverage", "htmlcov", 'index.html', "Coverage Report")
@@ -28,19 +28,22 @@ stage("Running static static analysis reports") {
         echo "Running MyPy report"
         runTox("mypy", "mypy_report", 'index.html', "MyPy Report")
       }
-}
+// }
 
 def runTox(environment, reportDir, reportFiles, reportName)
 {
-    node {
-      unstash 'pysource'
-      sh "${env.TOX} -e ${environment}"
-      publishHTML([allowMissing: false,
-                   alwaysLinkToLastBuild: false,
-                   keepAll: false,
-                   reportDir: "${reportDir}",
-                   reportFiles: "${reportFiles}",
-                   reportName: "${reportName}"])
+    stage("Running ${reportName}"){
+      node {
+        unstash 'pysource'
+        sh "${env.TOX} -e ${environment}"
+        publishHTML([allowMissing: false,
+                     alwaysLinkToLastBuild: false,
+                     keepAll: false,
+                     reportDir: "${reportDir}",
+                     reportFiles: "${reportFiles}",
+                     reportName: "${reportName}"])
+      }
+      
     }
 }
 
