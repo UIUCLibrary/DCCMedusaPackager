@@ -24,10 +24,6 @@ Installation from the Command Line From Source
 
 All finished! The script should now be installed on your system.
 
-Links
------
-`Documentation page <https://uiuclibrary.github.io/DCCMedusaPackager>`_
-
 Project Developers:
 -------------------
 * `Henry Borchers <hborcher@illinois.edu>`_
@@ -35,3 +31,7 @@ Project Developers:
 Stakeholders:
 -------------
 * Angela Waarala
+
+Links
+-----
+`Documentation page <https://uiuclibrary.github.io/DCCMedusaPackager>`_
