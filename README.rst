@@ -27,3 +27,10 @@ All finished! The script should now be installed on your system.
 Links
 -----
 `Documentation page <https://uiuclibrary.github.io/DCCMedusaPackager>`_
+
+Project Developers:
+-------------------
+* _`Henry Borchers<hborcher@illinois.edu>`_
+
+## Stakeholders:
+* Angela Waarala
