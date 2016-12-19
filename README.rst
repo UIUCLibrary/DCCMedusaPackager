@@ -32,5 +32,6 @@ Project Developers:
 -------------------
 * `Henry Borchers <hborcher@illinois.edu>`_
 
-## Stakeholders:
+Stakeholders:
+-------------
 * Angela Waarala
