@@ -30,7 +30,7 @@ Links
 
 Project Developers:
 -------------------
-* _`Henry Borchers<hborcher@illinois.edu>`_
+* `Henry Borchers <hborcher@illinois.edu>`_
 
 ## Stakeholders:
 * Angela Waarala
