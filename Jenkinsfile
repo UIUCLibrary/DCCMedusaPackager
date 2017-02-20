@@ -14,6 +14,7 @@ pipeline {
 
             }
         }
+
         stage("Unit tests on Linux") {
             agent any
 
@@ -24,7 +25,7 @@ pipeline {
                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
 
                     echo "PATH = ${env.PATH}"
-                    echo "Running: ${env.TOX}  --skip-missing-interpreters"
+                    echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
                     sh "${env.TOX}  --skip-missing-interpreters"
                 }
 
