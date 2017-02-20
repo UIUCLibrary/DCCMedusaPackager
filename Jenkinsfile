@@ -26,7 +26,7 @@ pipeline {
 
                     echo "PATH = ${env.PATH}"
                     echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
-                    sh "${env.TOX}  --skip-missing-interpreters"
+                    sh "${env.TOX}  --skip-missing-interpreters -e py35"
                 }
 
             }
