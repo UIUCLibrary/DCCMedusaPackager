@@ -48,33 +48,34 @@ pipeline {
             steps {
                 parallel(
                         "mypy": {
-                            echo "I'm running mypy"
-                            deleteDir()
-                            unstash "Source"
-                            sh "${env.TOX} -e mypy"
-                            publishHTML target: [
-                                    allowMissing         : false,
-                                    alwaysLinkToLastBuild: false,
-                                    keepAll              : true,
-                                    reportDir            : "mypy_report",
-                                    reportFiles          : "index.html",
-                                    reportName           : "MyPy Report"
-                            ]
+                            node(label: "!Windows") {
+                                deleteDir()
+                                unstash "Source"
+                                sh "${env.TOX} -e mypy"
+                                publishHTML target: [
+                                        allowMissing         : false,
+                                        alwaysLinkToLastBuild: false,
+                                        keepAll              : true,
+                                        reportDir            : "mypy_report",
+                                        reportFiles          : "index.html",
+                                        reportName           : "MyPy Report"
+                                ]
+                            }
                         },
                         "coverage": {
-                            echo "I'm running coverage"
-                            deleteDir()
-                            unstash "Source"
-                            sh "${env.TOX} -e coverage"
-                            publishHTML target: [
-                                    allowMissing         : false,
-                                    alwaysLinkToLastBuild: false,
-                                    keepAll              : true,
-                                    reportDir            : "htmlcov",
-                                    reportFiles          : "index.html",
-                                    reportName           : "Coverage Report"
-                            ]
-
+                            node(label: "!Windows") {
+                                deleteDir()
+                                unstash "Source"
+                                sh "${env.TOX} -e coverage"
+                                publishHTML target: [
+                                        allowMissing         : false,
+                                        alwaysLinkToLastBuild: false,
+                                        keepAll              : true,
+                                        reportDir            : "htmlcov",
+                                        reportFiles          : "index.html",
+                                        reportName           : "Coverage Report"
+                                ]
+                            }
                         }
                 )
             }
@@ -100,40 +101,59 @@ pipeline {
             }
         }
 
-
-        stage("Packaging source") {
-            agent any
-
+        stage("Packaging") {
             steps {
-                deleteDir()
-                unstash "Source"
-                sh "${env.PYTHON3} setup.py sdist"
+                parallel(
+                        "Windows Wheel": {
+                            node(label: "Windows") {
+                                deleteDir()
+                                unstash "Source"
+                                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+                                archiveArtifacts artifacts: "dist/**", fingerprint: true
+                            }
+                        },
+                        "Source Release": {
+                            deleteDir()
+                            unstash "Source"
+                            sh "${env.PYTHON3} setup.py sdist"
+                            archiveArtifacts artifacts: "dist/**", fingerprint: true
+                        }
+                )
             }
-
-            post {
-                success {
-                    archiveArtifacts artifacts: "dist/**", fingerprint: true
-                }
-            }
-
         }
-
-        stage("Packaging Windows binary Wheel") {
-            agent {
-                label "Windows"
-            }
-
-            steps {
-                deleteDir()
-                unstash "Source"
-                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: "dist/**", fingerprint: true
-                }
-            }
-
-        }
+//        stage("Packaging source") {
+//            agent any
+//
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                sh "${env.PYTHON3} setup.py sdist"
+//            }
+//
+//            post {
+//                success {
+//                    archiveArtifacts artifacts: "dist/**", fingerprint: true
+//                }
+//            }
+//
+//        }
+//
+//        stage("Packaging Windows binary Wheel") {
+//            agent {
+//                label "Windows"
+//            }
+//
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+//            }
+//            post {
+//                success {
+//                    archiveArtifacts artifacts: "dist/**", fingerprint: true
+//                }
+//            }
+//
+//        }
     }
 }
