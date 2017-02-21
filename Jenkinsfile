@@ -56,7 +56,7 @@ pipeline {
                                         allowMissing         : false,
                                         alwaysLinkToLastBuild: false,
                                         keepAll              : true,
-                                        reportDir            : "mypy_report",
+                                        reportDir            : "reports/mypy_report",
                                         reportFiles          : "index.html",
                                         reportName           : "MyPy Report"
                                 ]
@@ -71,7 +71,7 @@ pipeline {
                                         allowMissing         : false,
                                         alwaysLinkToLastBuild: false,
                                         keepAll              : true,
-                                        reportDir            : "htmlcov",
+                                        reportDir            : "reports/cov_html",
                                         reportFiles          : "index.html",
                                         reportName           : "Coverage Report"
                                 ]
