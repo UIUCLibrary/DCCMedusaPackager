@@ -96,8 +96,7 @@ pipeline {
                           python setup.py build_sphinx'
 
                 sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-                stash includes: 'docs/build/**', name: 'sphinx_docs'
-                archiveArtifacts artifacts: 'sphinx_docs.tar.gz'
+                archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
             }
         }
 
