@@ -19,11 +19,15 @@ pipeline {
                 parallel(
                         "Windows": {
                             node(label: 'Windows') {
-                                echo 'I\'m windows'
+                                deleteDir()
+                                unstash "Source"
+                                echo "Running Tox: Python 3.5 Unit tests"
+                                bat "${env.TOX}  --skip-missing-interpreters"
+                                junit 'reports/junit-*.xml'
+
                             }
                         },
                         "linux": {
-                            echo 'testing in firefox'
                             node(label: "!Windows") {
                                 echo "Im on linux"
                             }
