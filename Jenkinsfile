@@ -27,55 +27,76 @@ pipeline {
 
                             }
                         },
-                        "linux": {
+                        "Linux": {
                             node(label: "!Windows") {
-                                echo "Im on linux"
+                                deleteDir()
+                                unstash "Source"
+                                echo "Running Tox: Unit tests"
+                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+
+                                    echo "PATH = ${env.PATH}"
+                                    echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
+                                    sh "${env.TOX}  --skip-missing-interpreters -e py35"
+                                }
+                                junit 'reports/junit-*.xml'
                             }
                         }
                 )
             }
         }
-        stage("Unit tests on Linux") {
-            agent any
-
+        stage("Static Analysis") {
             steps {
-                deleteDir()
-                unstash "Source"
-                echo "Running Tox: Unit tests"
-                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-
-                    echo "PATH = ${env.PATH}"
-                    echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
-                    sh "${env.TOX}  --skip-missing-interpreters -e py35"
-                }
-
+                parallel(
+                        "mypy": {
+                            echo "I'm running mypy"
+                        },
+                        "coverage": {
+                            echo "I'm running coverage"
+                        }
+                )
             }
 
-            post {
-                always {
-                    stash includes: "reports/*.xml", name: "Linux junit"
-                }
-
-            }
-        }
-        stage("Unit tests on Windows") {
-            agent {
-                label "Windows"
-            }
-
-            steps {
-                deleteDir()
-                unstash "Source"
-                echo "Running Tox: Python 3.5 Unit tests"
-                bat "${env.TOX}  --skip-missing-interpreters"
-
-            }
-            post {
-                always {
-                    stash includes: "reports/*.xml", name: "Windows junit"
-
-                }
-            }
+//        stage("Unit tests on Linux") {
+//            agent any
+//
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                echo "Running Tox: Unit tests"
+//                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+//
+//                    echo "PATH = ${env.PATH}"
+//                    echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
+//                    sh "${env.TOX}  --skip-missing-interpreters -e py35"
+//                }
+//
+//            }
+//
+//            post {
+//                always {
+//                    stash includes: "reports/*.xml", name: "Linux junit"
+//                }
+//
+//            }
+//        }
+//        stage("Unit tests on Windows") {
+//            agent {
+//                label "Windows"
+//            }
+//
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                echo "Running Tox: Python 3.5 Unit tests"
+//                bat "${env.TOX}  --skip-missing-interpreters"
+//
+//            }
+//            post {
+//                always {
+//                    stash includes: "reports/*.xml", name: "Windows junit"
+//
+//                }
+//            }
 
         }
 
