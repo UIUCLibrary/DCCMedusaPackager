@@ -121,39 +121,6 @@ pipeline {
                 )
             }
         }
-//        stage("Packaging source") {
-//            agent any
-//
-//            steps {
-//                deleteDir()
-//                unstash "Source"
-//                sh "${env.PYTHON3} setup.py sdist"
-//            }
-//
-//            post {
-//                success {
-//                    archiveArtifacts artifacts: "dist/**", fingerprint: true
-//                }
-//            }
-//
-//        }
-//
-//        stage("Packaging Windows binary Wheel") {
-//            agent {
-//                label "Windows"
-//            }
-//
-//            steps {
-//                deleteDir()
-//                unstash "Source"
-//                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
-//            }
-//            post {
-//                success {
-//                    archiveArtifacts artifacts: "dist/**", fingerprint: true
-//                }
-//            }
-//
-//        }
+
     }
 }
