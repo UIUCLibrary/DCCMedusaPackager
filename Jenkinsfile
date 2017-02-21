@@ -81,7 +81,7 @@ pipeline {
         }
         stage("Documentation") {
             agent {
-                label :"!Windows"
+                label "!Windows"
             }
 
             steps {
