@@ -14,7 +14,23 @@ pipeline {
 
             }
         }
-
+        stage("Unit tests") {
+            steps {
+                parallel(
+                        "Windows": {
+                            node(label: 'Windows') {
+                                echo 'I\'m windows'
+                            }
+                        },
+                        "linux": {
+                            echo 'testing in firefox'
+                            node() {
+                                echo "Im on linux"
+                            }
+                        }
+                )
+            }
+        }
         stage("Unit tests on Linux") {
             agent any
 
