@@ -49,9 +49,32 @@ pipeline {
                 parallel(
                         "mypy": {
                             echo "I'm running mypy"
+                            deleteDir()
+                            unstash "Source"
+                            sh "${env.TOX} -e mypy"
+                            publishHTML target: [
+                                    allowMissing         : false,
+                                    alwaysLinkToLastBuild: false,
+                                    keepAll              : true,
+                                    reportDir            : "mypy_report",
+                                    reportFiles          : "index.html",
+                                    reportName           : "MyPy Report"
+                            ]
                         },
                         "coverage": {
                             echo "I'm running coverage"
+                            deleteDir()
+                            unstash "Source"
+                            sh "${env.TOX} -e coverage"
+                            publishHTML target: [
+                                    allowMissing         : false,
+                                    alwaysLinkToLastBuild: false,
+                                    keepAll              : true,
+                                    reportDir            : "htmlcov",
+                                    reportFiles          : "index.html",
+                                    reportName           : "Coverage Report"
+                            ]
+
                         }
                 )
             }
