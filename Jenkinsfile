@@ -24,7 +24,7 @@ pipeline {
                         },
                         "linux": {
                             echo 'testing in firefox'
-                            node() {
+                            node(label: "!Windows") {
                                 echo "Im on linux"
                             }
                         }
