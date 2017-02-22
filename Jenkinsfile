@@ -88,12 +88,20 @@ pipeline {
             steps {
                 deleteDir()
                 unstash "Source"
-                echo 'Building documentation'
-                echo 'Creating virtualenv for generating docs'
-                sh "${env.PYTHON3} -m virtualenv -p ${env.PYTHON3} venv_doc"
-                sh '. ./venv_doc/bin/activate && \
-                          pip install Sphinx && \
-                          python setup.py build_sphinx'
+//                echo 'Building documentation'
+//                echo 'Creating virtualenv for generating docs'
+                withEnv(['PYTHON=${env.PYTHON3}']) {
+//
+                    dir('docs') {
+                        sh 'make html SPHINXBUILD=$SPHINXBUILD'
+                    }
+                    stash includes: '**', name: "Documentation source", useDefaultExcludes: false
+
+                }
+//                sh "${env.PYTHON3} -m virtualenv -p ${env.PYTHON3} venv_doc"
+//                sh '. ./venv_doc/bin/activate && \
+//                          pip install Sphinx && \
+//                          python setup.py build_sphinx'
 
                 sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
                 archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
