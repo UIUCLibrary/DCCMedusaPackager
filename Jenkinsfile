@@ -127,10 +127,12 @@ pipeline {
                             archiveArtifacts artifacts: "dist/**", fingerprint: true
                         },
                         "MSI Release": {
-                            deleteDir()
-                            unstash "Source"
-                            sh "${env.PYTHON3} setup.py bdist_msi"
-                            archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+                            node(label: "Windows") {
+                                deleteDir()
+                                unstash "Source"
+                                sh "${env.PYTHON3} setup.py bdist_msi"
+                                archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+                            }
                         }
                 )
             }
