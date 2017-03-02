@@ -111,11 +111,18 @@ pipeline {
                                 archiveArtifacts artifacts: "dist/**", fingerprint: true
                             }
                         },
+
                         "Source Release": {
                             deleteDir()
                             unstash "Source"
                             sh "${env.PYTHON3} setup.py sdist"
                             archiveArtifacts artifacts: "dist/**", fingerprint: true
+                        },
+                        "MSI Release": {
+                            deleteDir()
+                            unstash "Source"
+                            sh "${env.PYTHON3} setup.py bdist_msi"
+                            archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
                 )
             }
