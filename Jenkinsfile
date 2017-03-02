@@ -130,7 +130,7 @@ pipeline {
                             node(label: "Windows") {
                                 deleteDir()
                                 unstash "Source"
-                                sh "${env.PYTHON3} setup.py bdist_msi"
+                                bat "${env.PYTHON3} setup.py bdist_msi"
                                 archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                             }
                         }
