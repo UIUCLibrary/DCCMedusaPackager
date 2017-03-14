@@ -34,4 +34,4 @@ Stakeholders:
 
 Links
 -----
-`Documentation page <https://uiuclibrary.github.io/DCCMedusaPackager>`_
+`Documentation page <http://www.library.illinois.edu/dccdocs/DCCMedusaPackager/>`_
