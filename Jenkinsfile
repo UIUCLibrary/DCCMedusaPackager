@@ -137,6 +137,22 @@ pipeline {
                 )
             }
         }
+         stage("Update online documentation") {
+            agent any
+
+            steps {
+                deleteDir()
+                script {
+                    unstash "Documentation source"
+                    sh("scp -r -i ${env.DCC_DOCS_KEY} docs/build/html/* ${env.DCC_DOCS_SERVER}/DCCMedusaPackager/")
+
+
+                }
+
+
+            }
+
+        }
 
     }
 }
