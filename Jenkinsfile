@@ -135,34 +135,6 @@ pipeline {
                 }
             }
         }
-//         stage("Documentation") {
-//             agent {
-//                 label "!Windows"
-//             }
-//
-//             steps {
-//                 deleteDir()
-//                 unstash "source"
-// //                echo 'Building documentation'
-// //                echo 'Creating virtualenv for generating docs'
-//                 withEnv(['PYTHON=${env.PYTHON3}']) {
-// //
-//                     dir('docs') {
-//                         sh 'make html SPHINXBUILD=$SPHINXBUILD'
-//                     }
-//                     stash includes: '**', name: "Documentation source", useDefaultExcludes: false
-//
-//                 }
-// //                sh "${env.PYTHON3} -m virtualenv -p ${env.PYTHON3} venv_doc"
-// //                sh '. ./venv_doc/bin/activate && \
-// //                          pip install Sphinx && \
-// //                          python setup.py build_sphinx'
-//
-//                 sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-//                 archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-//             }
-//         }
-
         stage("Packaging") {
             steps {
               parallel(
@@ -212,16 +184,6 @@ pipeline {
                         pip install -r requirements.txt
                         python cx_setup.py bdist_msi --add-to-path=true
                       """
-                      //   python cx_setup.py build --build-exe build/tmp
-                      //   build\\tmp\\qcpkg.exe --pytest --verbose  --junitxml=reports/junit-frozen.xml --junit-prefix=frozen
-                      //   if %errorlevel%==0 (
-                      //     python cx_setup.py bdist_msi --add-to-path=true
-                      //     ) else (
-                      //       echo errorlevel=%errorlevel%
-                      //       exit /b %errorlevel%
-                      //       )
-                      // """
-                      // junit 'reports/junit-*.xml'
                       dir("dist") {
                         archiveArtifacts artifacts: "*.msi", fingerprint: true
                       }
@@ -234,6 +196,9 @@ pipeline {
         }
          stage("Update online documentation") {
             agent any
+            when{
+              expression{params.UPDATE_DOCS == true}
+            }
 
             steps {
                 deleteDir()
