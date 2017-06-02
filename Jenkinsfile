@@ -112,11 +112,26 @@ pipeline {
             steps {
                 parallel(
                         "Windows Wheel": {
+                            // node(label: "Windows") {
+                            //     deleteDir()
+                            //     unstash "Source"
+                            //     bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+                            //     archiveArtifacts artifacts: "dist/**", fingerprint: true
+                            // }
                             node(label: "Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                bat "${env.PYTHON3} setup.py bdist_wheel --universal"
-                                archiveArtifacts artifacts: "dist/**", fingerprint: true
+                              deleteDir()
+                              unstash "source"
+                              withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                                bat """
+                                  ${env.PYTHON3} -m venv .env
+                                  call .env/Scripts/activate.bat
+                                  pip install -r requirements.txt
+                                  python setup.py bdist_wheel
+                                """
+                                dir("dist") {
+                                  archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                }
+                              }
                             }
                         },
 
