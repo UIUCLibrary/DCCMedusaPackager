@@ -1,6 +1,5 @@
 tox
 pytest
-lxml
 mypy
 mypy-lang
 pytest-cov
