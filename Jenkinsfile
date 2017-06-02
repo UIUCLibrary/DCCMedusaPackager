@@ -1,6 +1,9 @@
 #!groovy
 pipeline {
     agent any
+    parameters {
+      booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
+    }
 
     stages {
         stage("Cloning Source") {
@@ -105,32 +108,60 @@ pipeline {
             }
         }
         stage("Documentation") {
-            agent {
-                label "!Windows"
-            }
+            agent any
 
             steps {
                 deleteDir()
-                unstash "source"
-//                echo 'Building documentation'
-//                echo 'Creating virtualenv for generating docs'
+                unstash "Source"
                 withEnv(['PYTHON=${env.PYTHON3}']) {
-//
-                    dir('docs') {
-                        sh 'make html SPHINXBUILD=$SPHINXBUILD'
-                    }
+                  sh """
+                  ${env.PYTHON3} -m venv .env
+                  . .env/bin/activate
+                  pip install -r requirements.txt
+                  cd docs && make html
+
+                  """
+
+                    // dir('docs') {
+                    //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
+                    // }
                     stash includes: '**', name: "Documentation source", useDefaultExcludes: false
-
                 }
-//                sh "${env.PYTHON3} -m virtualenv -p ${env.PYTHON3} venv_doc"
-//                sh '. ./venv_doc/bin/activate && \
-//                          pip install Sphinx && \
-//                          python setup.py build_sphinx'
-
-                sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-                archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
+            }
+            post {
+                success {
+                    sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
+                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
+                }
             }
         }
+//         stage("Documentation") {
+//             agent {
+//                 label "!Windows"
+//             }
+//
+//             steps {
+//                 deleteDir()
+//                 unstash "source"
+// //                echo 'Building documentation'
+// //                echo 'Creating virtualenv for generating docs'
+//                 withEnv(['PYTHON=${env.PYTHON3}']) {
+// //
+//                     dir('docs') {
+//                         sh 'make html SPHINXBUILD=$SPHINXBUILD'
+//                     }
+//                     stash includes: '**', name: "Documentation source", useDefaultExcludes: false
+//
+//                 }
+// //                sh "${env.PYTHON3} -m virtualenv -p ${env.PYTHON3} venv_doc"
+// //                sh '. ./venv_doc/bin/activate && \
+// //                          pip install Sphinx && \
+// //                          python setup.py build_sphinx'
+//
+//                 sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
+//                 archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
+//             }
+//         }
 
         stage("Packaging") {
             steps {
