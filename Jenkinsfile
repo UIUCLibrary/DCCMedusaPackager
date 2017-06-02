@@ -10,7 +10,7 @@ pipeline {
                 deleteDir()
                 echo "Cloning source"
                 checkout scm
-                stash includes: '**', name: "Source"
+                stash includes: '**', name: "source"
 
             }
         }
@@ -20,7 +20,7 @@ pipeline {
                         "Windows": {
                             node(label: 'Windows') {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 echo "Running Tox: Python 3.5 Unit tests"
                                 bat "${env.TOX}  --skip-missing-interpreters"
                                 junit 'reports/junit-*.xml'
@@ -30,7 +30,7 @@ pipeline {
                         "Linux": {
                             node(label: "!Windows") {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 echo "Running Tox: Unit tests"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
 
@@ -50,7 +50,7 @@ pipeline {
                         "mypy": {
                             node(label: "!Windows") {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 sh "${env.TOX} -e mypy"
                                 publishHTML target: [
                                         allowMissing         : false,
@@ -65,7 +65,7 @@ pipeline {
                         "coverage": {
                             node(label: "!Windows") {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 sh "${env.TOX} -e coverage"
                                 publishHTML target: [
                                         allowMissing         : false,
@@ -87,7 +87,7 @@ pipeline {
 
             steps {
                 deleteDir()
-                unstash "Source"
+                unstash "source"
 //                echo 'Building documentation'
 //                echo 'Creating virtualenv for generating docs'
                 withEnv(['PYTHON=${env.PYTHON3}']) {
@@ -137,14 +137,14 @@ pipeline {
 
                         "Source Release": {
                             deleteDir()
-                            unstash "Source"
+                            unstash "source"
                             sh "${env.PYTHON3} setup.py sdist"
                             archiveArtifacts artifacts: "dist/**", fingerprint: true
                         },
                         "MSI Release": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 bat "${env.PYTHON3} setup.py bdist_msi"
                                 archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                             }
@@ -152,7 +152,7 @@ pipeline {
                         "bdist_wininst Release": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "Source"
+                                unstash "source"
                                 bat "${env.PYTHON3} setup.py bdist_wininst"
                                 archiveArtifacts artifacts: "dist/*.exe", fingerprint: true
                             }
