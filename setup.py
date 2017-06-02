@@ -1,17 +1,17 @@
 from setuptools import setup
-
+import MedusaPackager
 setup(
-    name='DCCMedusaPackager',
-    version='0.0.4',
+    name=MedusaPackager.__title__,
+    version=MedusaPackager.__version__,
     packages=['MedusaPackager'],
     entry_points={
         'console_scripts': ['packagemedusa=MedusaPackager.processcli:main']
     },
-    url='https://github.com/UIUCLibrary/DCCMedusaPackager',
+    url=MedusaPackager.__version__,
     zip_safe=False,
     test_suite='tests',
     license='',
-    author='Henry Borchers',
-    author_email='hborcher@illinois.edu',
-    description='Script for packaging DCC files for ingesting into Medusa',
+    author=MedusaPackager.__author__,
+    author_email=MedusaPackager.__author_email__,
+    description=MedusaPackager.__description__,
 )
