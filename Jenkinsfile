@@ -166,7 +166,7 @@ pipeline {
                       //       exit /b %errorlevel%
                       //       )
                       // """
-                      junit 'reports/junit-*.xml'
+                      // junit 'reports/junit-*.xml'
                       dir("dist") {
                         archiveArtifacts artifacts: "*.msi", fingerprint: true
                       }
