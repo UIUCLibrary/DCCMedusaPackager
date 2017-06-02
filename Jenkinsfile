@@ -110,54 +110,117 @@ pipeline {
 
         stage("Packaging") {
             steps {
-                parallel(
-                        "Windows Wheel": {
-                            // node(label: "Windows") {
-                            //     deleteDir()
-                            //     unstash "Source"
-                            //     bat "${env.PYTHON3} setup.py bdist_wheel --universal"
-                            //     archiveArtifacts artifacts: "dist/**", fingerprint: true
-                            // }
-                            node(label: "Windows") {
-                              deleteDir()
-                              unstash "source"
-                              withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                bat """
-                                  ${env.PYTHON3} -m venv .env
-                                  call .env/Scripts/activate.bat
-                                  pip install -r requirements.txt
-                                  python setup.py bdist_wheel
-                                """
-                                dir("dist") {
-                                  archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                }
-                              }
-                            }
-                        },
+              parallel(
+                "Source Package": {
+                  node(label: "!Windows") {
+                    deleteDir()
+                    unstash "source"
+                    withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                      sh """
+                      ${env.PYTHON3} -m venv .env
+                      . .env/bin/activate
+                      pip install -r requirements.txt
+                      python setup.py sdist
+                      """
+                      dir("dist") {
+                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                      }
+                      }
+                  }
+                },
+                "Python Wheel:" :{
+                  node(label: "Windows") {
+                    deleteDir()
+                    unstash "source"
+                    withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                      bat """
+                        ${env.PYTHON3} -m venv .env
+                        call .env/Scripts/activate.bat
+                        pip install -r requirements.txt
+                        python setup.py bdist_wheel
+                      """
+                      dir("dist") {
+                        archiveArtifacts artifacts: "*.whl", fingerprint: true
+                      }
+                    }
+                  }
+                },
+                "Python CX_Freeze Windows" :{
+                  node(label: "Windows") {
+                    deleteDir()
+                    unstash "source"
+                    withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                      bat """
+                        ${env.PYTHON3} -m venv .env
+                        call .env/Scripts/activate.bat
+                        pip install --upgrade setuptools
+                        pip install -r requirements.txt
+                        python cx_setup.py build --build-exe build/tmp
+                        build\\tmp\\qcpkg.exe --pytest --verbose  --junitxml=reports/junit-frozen.xml --junit-prefix=frozen
+                        if %errorlevel%==0 (
+                          python cx_setup.py bdist_msi --add-to-path=true
+                          ) else (
+                            echo errorlevel=%errorlevel%
+                            exit /b %errorlevel%
+                            )
+                      """
+                      junit 'reports/junit-*.xml'
+                      dir("dist") {
+                        archiveArtifacts artifacts: "*.msi", fingerprint: true
+                      }
+                    }
+                  }
+                }
+              )
+                // parallel(
 
-                        "Source Release": {
-                            deleteDir()
-                            unstash "source"
-                            sh "${env.PYTHON3} setup.py sdist"
-                            archiveArtifacts artifacts: "dist/**", fingerprint: true
-                        },
-                        "MSI Release": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "source"
-                                bat "${env.PYTHON3} setup.py bdist_msi"
-                                archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
-                            }
-                        },
-                        "bdist_wininst Release": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "source"
-                                bat "${env.PYTHON3} setup.py bdist_wininst"
-                                archiveArtifacts artifacts: "dist/*.exe", fingerprint: true
-                            }
-                        }
-                )
+                //         "Windows Wheel": {
+                //             // node(label: "Windows") {
+                //             //     deleteDir()
+                //             //     unstash "Source"
+                //             //     bat "${env.PYTHON3} setup.py bdist_wheel --universal"
+                //             //     archiveArtifacts artifacts: "dist/**", fingerprint: true
+                //             // }
+                //             node(label: "Windows") {
+                //               deleteDir()
+                //               unstash "source"
+                //               withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                //                 bat """
+                //                   ${env.PYTHON3} -m venv .env
+                //                   call .env/Scripts/activate.bat
+                //                   pip install -r requirements.txt
+                //                   python setup.py bdist_wheel
+                //                 """
+                //                 dir("dist") {
+                //                   archiveArtifacts artifacts: "*.whl", fingerprint: true
+                //                 }
+                //               }
+                //             }
+                //         },
+                //
+                //         "Source Release": {
+                //             deleteDir()
+                //             unstash "source"
+                //             sh "${env.PYTHON3} setup.py sdist"
+                //             archiveArtifacts artifacts: "dist/**", fingerprint: true
+                //         },
+                //         "MSI Release": {
+                //             node(label: "Windows") {
+                //                 deleteDir()
+                //                 unstash "source"
+                //                 bat "${env.PYTHON3} setup.py bdist_msi"
+                //                 archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+                //             }
+                //         },
+                //         "bdist_wininst Release": {
+                //             node(label: "Windows") {
+                //                 deleteDir()
+                //                 unstash "source"
+                //                 bat "${env.PYTHON3} setup.py bdist_wininst"
+                //                 archiveArtifacts artifacts: "dist/*.exe", fingerprint: true
+                //             }
+                //         }
+                // )
             }
         }
          stage("Update online documentation") {
