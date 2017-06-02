@@ -4,3 +4,4 @@ lxml
 mypy
 mypy-lang
 pytest-cov
+cx-freeze
