@@ -21,7 +21,6 @@ pipeline {
                             node(label: 'Windows') {
                                 deleteDir()
                                 unstash "source"
-                                // echo "Running Tox: Python 3.5 Unit tests"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                   bat """
                                   ${env.PYTHON3} -m venv .env
@@ -31,8 +30,6 @@ pipeline {
                                                   tox  --skip-missing-interpreters
                                   """
                                 }
-
-                                // bat "${env.TOX}  --skip-missing-interpreters"
                                 junit 'reports/junit-*.xml'
 
                             }
@@ -49,13 +46,6 @@ pipeline {
                                   tox  --skip-missing-interpreters -e py35 || true
                                   """
                                 }
-                                // echo "Running Tox: Unit tests"
-                                // withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                //
-                                //     echo "PATH = ${env.PATH}"
-                                //     echo "Running: ${env.TOX}  --skip-missing-interpreters -e py35"
-                                //     sh "${env.TOX}  --skip-missing-interpreters -e py35"
-                                // }
                                 junit 'reports/junit-*.xml'
                             }
                         }
@@ -69,7 +59,15 @@ pipeline {
                             node(label: "!Windows") {
                                 deleteDir()
                                 unstash "source"
-                                sh "${env.TOX} -e mypy"
+                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                                  sh """
+                                  ${env.PYTHON3} -m venv .env
+                                  . .env/bin/activate
+                                  pip install -r requirements.txt
+                                  tox  --skip-missing-interpreters -e mypy || true
+                                  """
+                                }
+                                // sh "${env.TOX} -e mypy"
                                 publishHTML target: [
                                         allowMissing         : false,
                                         alwaysLinkToLastBuild: false,
@@ -84,7 +82,15 @@ pipeline {
                             node(label: "!Windows") {
                                 deleteDir()
                                 unstash "source"
-                                sh "${env.TOX} -e coverage"
+                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                                  sh """
+                                  ${env.PYTHON3} -m venv .env
+                                  . .env/bin/activate
+                                  pip install -r requirements.txt
+                                  tox  --skip-missing-interpreters -e coverage || true
+                                  """
+                                }
+                                // sh "${env.TOX} -e coverage"
                                 publishHTML target: [
                                         allowMissing         : false,
                                         alwaysLinkToLastBuild: false,
