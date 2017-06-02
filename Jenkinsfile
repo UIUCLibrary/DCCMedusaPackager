@@ -21,8 +21,18 @@ pipeline {
                             node(label: 'Windows') {
                                 deleteDir()
                                 unstash "source"
-                                echo "Running Tox: Python 3.5 Unit tests"
-                                bat "${env.TOX}  --skip-missing-interpreters"
+                                // echo "Running Tox: Python 3.5 Unit tests"
+                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                                  bat """
+                                  ${env.PYTHON3} -m venv .env
+                                                  call .env/Scripts/activate.bat
+                                                  pip install --upgrade setuptools
+                                                  pip install -r requirements.txt
+                                                  tox  --skip-missing-interpreters
+                                  """
+                                }
+
+                                // bat "${env.TOX}  --skip-missing-interpreters"
                                 junit 'reports/junit-*.xml'
 
                             }
