@@ -17,6 +17,9 @@ setup(
                    targetName=("{}.exe".format(EXECUTABLE_NAME) if platform.system() == "Windows" else EXECUTABLE_NAME))
 
     },
-    # options={"build_exe": {'includes': includes}},
+    options={"build_exe": {
+        "include_msvcr": True
+        }
+    },
 
 )
