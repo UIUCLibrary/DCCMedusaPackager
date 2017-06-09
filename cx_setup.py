@@ -45,21 +45,30 @@ INCLUDE_FILES = [
 ]
 
 setup(
-    name=MedusaPackager.__title__,
+    name=MedusaPackager.FULL_TITLE,
     version=MedusaPackager.__version__,
+    description=MedusaPackager.__description__,
+    author=MedusaPackager.__author__,
+    author_email=MedusaPackager.__author_email__,
     packages=[
         'MedusaPackager',
     ],
     url=MedusaPackager.__url__,
-    description=MedusaPackager.__description__,
     executables={
         Executable("MedusaPackager/processcli.py",
                    targetName=("{}.exe".format(EXECUTABLE_NAME) if platform.system() == "Windows" else EXECUTABLE_NAME))
 
     },
     options={"build_exe": {
-        "include_msvcr": True
-    }
+        "include_msvcr": True,
+        "include_files": INCLUDE_FILES,
+    },
+        "bdist_msi": {
+            "data": {
+                "Shortcut": shortcut_table,
+                "Directory": directory_table
+            }
+        }
     },
 
 )
