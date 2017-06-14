@@ -4,10 +4,10 @@ MedusaPackager package
 Submodules
 ----------
 
-MedusaPackager.MedusaPackager module
-------------------------------------
+MedusaPackager.packager module
+------------------------------
 
-.. automodule:: MedusaPackager.MedusaPackager
+.. automodule:: MedusaPackager.packager
     :members:
     :undoc-members:
     :show-inheritance:
