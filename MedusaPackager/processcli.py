@@ -6,7 +6,6 @@ import sys
 
 import MedusaPackager
 
-
 class Processor:
     """
     Abstract base class for any addition type of jobs that need to be done. Intended to make building addition
@@ -53,12 +52,25 @@ def find_arg_problems(args):
     if not os.path.exists(args.destination):
         yield "\"{}\" is not a valid destination.".format(args.destination)
 
+def build_parser():
+    parser = argparse.ArgumentParser()
+    command_group = parser.add_mutually_exclusive_group()
+
+    information_group = command_group.add_mutually_exclusive_group()
+    information_group.add_argument("--version",
+                                   action="version",
+                                   # help="Get version",
+                                   version=MedusaPackager.__version__)
+
+    process_group = command_group.add_argument_group()
+    process_group.add_argument('source', help="Directory for files to be sorted")
+    process_group.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
+    process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+
+    return parser
 
 def setup():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('source', help="Directory for files to be sorted")
-    parser.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
-    parser.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+    parser = build_parser()
     args = parser.parse_args()
     problems = list(find_arg_problems(args))
     if len(problems) > 0:
