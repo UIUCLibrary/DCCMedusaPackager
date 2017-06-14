@@ -2,7 +2,7 @@ import os
 import itertools
 from unittest import TestCase, mock
 
-from MedusaPackager import MedusaPackager
+from MedusaPackager import packager
 
 
 class TestFind_package_files_nodashes(TestCase):
@@ -63,26 +63,26 @@ class TestFind_package_files_nodashes(TestCase):
                                         '00000023_023.tif',
                                         '00000024_024.tif',))
             )
-        self.package = MedusaPackager.find_package_files(r"")
+        self.package = packager.find_package_files(r"")
 
     def test_find_package_imageonly(self):
 
         for file in self.package.all_image_files:
             ext = os.path.splitext(file)[1]
             self.assertNotEqual(ext, ".db", msg="Found system file{}".format(file))
-            self.assertTrue(ext.lower() in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is not a valid file type".format(file))
 
     def test_find_package_ignored(self):
         for file in self.package.ignored_files:
             ext = os.path.splitext(file)[1]
-            self.assertTrue(ext.lower() not in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() not in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is a valid file type and shouldn't be in the ignored files".format(file))
 
     def test_split_item_level_iter(self):
-        for item in MedusaPackager.split_items(self.package, MedusaPackager.default_grouper):
+        for item in packager.split_items(self.package, packager.default_grouper):
             self.assertIsNotNone(item)
-            self.assertIsInstance(item, MedusaPackager.MedusaPackageData)
+            self.assertIsInstance(item, packager.MedusaPackageData)
         pass
 
     def test_sorted(self):
@@ -91,7 +91,7 @@ class TestFind_package_files_nodashes(TestCase):
         self.assertEqual(len(data.access_files), 0)
 
     def test_generate_deployment(self):
-        packages = self.package.split_items(MedusaPackager.dash_grouper)
+        packages = self.package.split_items(packager.dash_grouper)
         self.assertEqual(len(packages), 0)
 
 
@@ -153,26 +153,26 @@ class TestFind_package_files2(TestCase):
                                         '00000023_023.tif',
                                         '00000024_024.tif',))
             )
-        self.package = MedusaPackager.find_package_files(r"")
+        self.package = packager.find_package_files(r"")
 
     def test_find_package_imageonly(self):
 
         for file in self.package.all_image_files:
             ext = os.path.splitext(file)[1]
             self.assertNotEqual(ext, ".db", msg="Found system file{}".format(file))
-            self.assertTrue(ext.lower() in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is not a valid file type".format(file))
 
     def test_find_package_ignored(self):
         for file in self.package.ignored_files:
             ext = os.path.splitext(file)[1]
-            self.assertTrue(ext.lower() not in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() not in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is a valid file type and shouldn't be in the ignored files".format(file))
 
     def test_split_item_level_iter(self):
-        for item in MedusaPackager.split_items(self.package, MedusaPackager.default_grouper):
+        for item in packager.split_items(self.package, packager.default_grouper):
             self.assertIsNotNone(item)
-            self.assertIsInstance(item, MedusaPackager.MedusaPackageData)
+            self.assertIsInstance(item, packager.MedusaPackageData)
         pass
 
     def test_sorted(self):
@@ -181,7 +181,7 @@ class TestFind_package_files2(TestCase):
         self.assertEqual(len(data.access_files), 0)
 
     def test_generate_deployment(self):
-        packages = self.package.split_items(MedusaPackager.dash_grouper)
+        packages = self.package.split_items(packager.dash_grouper)
         self.assertEqual(len(packages), 0)
 
 
@@ -289,26 +289,26 @@ class TestFind_package_files(TestCase):
 
             )
 
-            self.package = MedusaPackager.find_package_files(r"")
+            self.package = packager.find_package_files(r"")
 
     def test_find_package_imageonly(self):
 
         for file in self.package.all_image_files:
             ext = os.path.splitext(file)[1]
             self.assertNotEqual(ext, ".db", msg="Found system file{}".format(file))
-            self.assertTrue(ext.lower() in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is not a valid file type".format(file))
 
     def test_find_package_ignored(self):
         for file in self.package.ignored_files:
             ext = os.path.splitext(file)[1]
-            self.assertTrue(ext.lower() not in MedusaPackager.VALID_IMAGE_EXTENSIONS,
+            self.assertTrue(ext.lower() not in packager.VALID_IMAGE_EXTENSIONS,
                             msg="{} is a valid file type and shouldn't be in the ignored files".format(file))
 
     def test_split_item_level_iter(self):
-        for item in MedusaPackager.split_items(self.package, MedusaPackager.default_grouper):
+        for item in packager.split_items(self.package, packager.default_grouper):
             self.assertIsNotNone(item)
-            self.assertIsInstance(item, MedusaPackager.MedusaPackageData)
+            self.assertIsInstance(item, packager.MedusaPackageData)
         pass
 
     def test_sorted(self):
@@ -317,7 +317,7 @@ class TestFind_package_files(TestCase):
         self.assertEqual(len(data.access_files), 21)
 
     def test_generate_deployment(self):
-        raw_data = sorted(self.package.split_items(MedusaPackager.dash_grouper), key=lambda x: x.package_name)[0]
+        raw_data = sorted(self.package.split_items(packager.dash_grouper), key=lambda x: x.package_name)[0]
         data = raw_data.sorted()
         jobs = sorted(data.generate_deployment("/tmp"), key=lambda x: x.source)
         self.assertEqual(os.path.normpath(jobs[0].destination),
