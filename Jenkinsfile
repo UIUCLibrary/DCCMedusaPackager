@@ -2,12 +2,14 @@
 pipeline {
     agent any
     parameters {
+      string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
       booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
       booleanParam(name: "STATIC_ANALYSIS", defaultValue: true, description: "Run static analysis tests")
-      booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
       booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
       booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
       string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
+      booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
+      booleanParam(name: "DEPLOY", defaultValue: false, description: "Deploy SCCM")
     }
 
     stages {
@@ -198,6 +200,7 @@ pipeline {
                     """
                     dir("dist") {
                       archiveArtifacts artifacts: "*.msi", fingerprint: true
+                      stash includes: "*.msi", name: "msi"
                     }
                   }
                 }
@@ -222,6 +225,30 @@ pipeline {
                     }
                 }
             }
+        }
+        stage("Deploy - Staging"){
+          agent any
+          when {
+            expression{params.DEPLOY == true && params.PACKAGE == true}
+          }
+          steps {
+            deleteDir()
+            unstash "msi"
+            sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
+            input("Deploy to production?")
+          }
+        }
+
+        stage("Deploy - SCCM upload"){
+          agent any
+          when {
+            expression{params.DEPLOY == true && params.PACKAGE == true}
+          }
+          steps {
+            deleteDir()
+            unstash "msi"
+            sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
+          }
         }
     }
 }
