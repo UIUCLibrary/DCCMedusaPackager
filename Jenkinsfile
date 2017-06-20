@@ -249,6 +249,5 @@ pipeline {
             sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
           }
         }
-      }
     }
 }
