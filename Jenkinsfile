@@ -200,6 +200,7 @@ pipeline {
                     """
                     dir("dist") {
                       archiveArtifacts artifacts: "*.msi", fingerprint: true
+                      stash includes: "*.msi", name: "msi"
                     }
                   }
                 }
