@@ -1,0 +1,17 @@
+deployer:
+  name: Scott
+package:
+  filename: DCC Medusa Packager-amd64.msi
+  path: \\files.library.illinois.edu\groupfiles\Digital Content Creation\SCCM Upload\
+maintainer:
+  name: Henry Borchers
+  email: hborcher@illinois.edu
+deployment:
+  hostnames:
+    - LIBSTFDCC02
+    - LIBSTFDCC03
+    - LIBSTFDCC04
+    - LIBSTFDCC06
+    - LIBSTFDCC08
+    - LIBSTFDCC09
+    - LIBSTFDCC013
