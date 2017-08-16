@@ -66,45 +66,19 @@ pipeline {
             }
             steps {
                 parallel(
-                        "mypy": {
-                            script{
+                        "MyPy": {
+                            script {
                                 def runner = new Tox(this)
+                                runner.env = "mypy"
                                 runner.windows = false
                                 runner.stash = "source"
                                 runner.label = "!Windows"
                                 runner.post = {
-                                    publishHTML target: [
-                                        allowMissing         : false,
-                                        alwaysLinkToLastBuild: false,
-                                        keepAll              : true,
-                                        reportDir            : "reports/mypy_report",
-                                        reportFiles          : "index.html",
-                                        reportName           : "MyPy Report"
-                                    ]
+                                    junit 'mypy.xml'
                                 }
                                 runner.run()
+
                             }
-//                            node(label: "!Windows") {
-//                                deleteDir()
-//                                unstash "source"
-//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-//                                    sh """
-//                          ${env.PYTHON3} -m venv .env
-//                          . .env/bin/activate
-//                          pip install -r requirements.txt
-//                          tox  --skip-missing-interpreters -e mypy || true
-//                          """
-//                                }
-//                                // sh "${env.TOX} -e mypy"
-//                                publishHTML target: [
-//                                        allowMissing         : false,
-//                                        alwaysLinkToLastBuild: false,
-//                                        keepAll              : true,
-//                                        reportDir            : "reports/mypy_report",
-//                                        reportFiles          : "index.html",
-//                                        reportName           : "MyPy Report"
-//                                ]
-//                            }
                         },
                         "coverage": {
                             node(label: "!Windows") {
