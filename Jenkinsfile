@@ -27,7 +27,7 @@ pipeline {
                 deleteDir()
                 echo "Cloning source"
                 checkout scm
-                stash includes: '**', name: "source"
+                stash includes: '**', name: "Source"
                 stash includes: 'deployment.yml', name: "Deployment"
 
             }
@@ -42,7 +42,7 @@ pipeline {
                             script {
                                 def runner = new Tox(this)
                                 runner.windows = true
-                                runner.stash = "source"
+                                runner.stash = "Source"
                                 runner.label = "Windows"
                                 runner.post = {
                                     junit 'reports/junit-*.xml'
@@ -54,7 +54,7 @@ pipeline {
                             script {
                                 def runner = new Tox(this)
                                 runner.windows = false
-                                runner.stash = "source"
+                                runner.stash = "Source"
                                 runner.label = "!Windows"
                                 runner.post = {
                                     junit 'reports/junit-*.xml'
@@ -76,7 +76,7 @@ pipeline {
                                 def runner = new Tox(this)
                                 runner.env = "mypy"
                                 runner.windows = false
-                                runner.stash = "source"
+                                runner.stash = "Source"
                                 runner.label = "!Windows"
                                 runner.post = {
                                     junit 'mypy.xml'
@@ -90,7 +90,7 @@ pipeline {
                                 def runner = new Tox(this)
                                 runner.env = "coverage"
                                 runner.windows = false
-                                runner.stash = "source"
+                                runner.stash = "Source"
                                 runner.label = "!Windows"
                                 runner.post = {
                                     publishHTML target: [
@@ -116,7 +116,7 @@ pipeline {
             }
             steps {
                 deleteDir()
-                unstash "source"
+                unstash "Source"
                 withEnv(['PYTHON=${env.PYTHON3}']) {
                     sh """
                   ${env.PYTHON3} -m venv .env
@@ -152,7 +152,7 @@ pipeline {
                         "Source Package": {
                             node(label: "!Windows") {
                                 deleteDir()
-                                unstash "source"
+                                unstash "Source"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                     sh """
                     ${env.PYTHON3} -m venv .env
@@ -169,7 +169,7 @@ pipeline {
                         "Python Wheel:": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "source"
+                                unstash "Source"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                     bat """
                       ${env.PYTHON3} -m venv .env
@@ -186,7 +186,7 @@ pipeline {
                         "Python CX_Freeze Windows": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "source"
+                                unstash "Source"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                     bat """
                       ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
