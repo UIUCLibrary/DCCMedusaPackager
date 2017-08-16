@@ -34,21 +34,31 @@ pipeline {
             steps {
                 parallel(
                         "Windows": {
-                            node(label: 'Windows') {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    bat """
-                          ${env.PYTHON3} -m venv .env
-                                          call .env/Scripts/activate.bat
-                                          pip install --upgrade setuptools
-                                          pip install -r requirements.txt
-                                          tox  --skip-missing-interpreters
-                          """
+                            script {
+                                def runner = new Tox(this)
+                                runner.windows = true
+                                runner.stash = "Source"
+                                runner.label = "Windows"
+                                runner.post = {
+                                    junit 'reports/junit-*.xml'
                                 }
-                                junit 'reports/junit-*.xml'
-
+                                runner.run()
                             }
+//                            node(label: 'Windows') {
+//                                deleteDir()
+//                                unstash "source"
+//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+//                                    bat """
+//                          ${env.PYTHON3} -m venv .env
+//                                          call .env/Scripts/activate.bat
+//                                          pip install --upgrade setuptools
+//                                          pip install -r requirements.txt
+//                                          tox  --skip-missing-interpreters
+//                          """
+//                                }
+//                                junit 'reports/junit-*.xml'
+//
+//                            }
                         },
                         "Linux": {
                             node(label: "!Windows") {
