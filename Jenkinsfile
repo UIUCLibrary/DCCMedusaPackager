@@ -143,9 +143,11 @@ pipeline {
                     // dir('docs') {
                     //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
                     // }
-//                    dir
+                    dir("docs/build/html"){
+                        stash includes: '**', name: "Documentation source", useDefaultExcludes: false
+                    }
 
-                    stash includes: 'docs/build/html/**', name: "Documentation source", useDefaultExcludes: false
+
                 }
             }
             post {
@@ -220,7 +222,6 @@ pipeline {
             }
             steps {
                 unstash "Documentation source"
-                sh "ls -la"
                 updateOnlineDocs stash_name: "Documentation source", url_subdomain: params.URL_SUBFOLDER
 //                deleteDir()
 //                script {
