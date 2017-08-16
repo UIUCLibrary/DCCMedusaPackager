@@ -150,21 +150,22 @@ pipeline {
             steps {
                 parallel(
                         "Source Package": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                    ${env.PYTHON3} -m venv .env
-                    . .env/bin/activate
-                    pip install -r requirements.txt
-                    python setup.py sdist
-                    """
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                    }
-                                }
-                            }
+                            createSourceRelease(env.PYTHON3, "Source")
+//                            node(label: "!Windows") {
+//                                deleteDir()
+//                                unstash "Source"
+//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+//                                    sh """
+//                    ${env.PYTHON3} -m venv .env
+//                    . .env/bin/activate
+//                    pip install -r requirements.txt
+//                    python setup.py sdist
+//                    """
+//                                    dir("dist") {
+//                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+//                                    }
+//                                }
+//                            }
                         },
                         "Python Wheel:": {
                             node(label: "Windows") {
