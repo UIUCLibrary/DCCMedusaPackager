@@ -74,7 +74,7 @@ pipeline {
                                 runner.stash = "source"
                                 runner.label = "!Windows"
                                 runner.post = {
-                                    junit 'mypy.xml'
+                                    junit 'reports/mypy.xml'
                                 }
                                 runner.run()
 
