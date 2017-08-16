@@ -48,7 +48,7 @@ pipeline {
                         "Linux": {
                             script{
                                 def runner = new Tox(this)
-                                runner.windows = true
+                                runner.windows = false
                                 runner.stash = "source"
                                 runner.label = "!Windows"
                                 runner.post = {
