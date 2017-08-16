@@ -11,8 +11,7 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
-        booleanParam(name: "STATIC_ANALYSIS", defaultValue: true, description: "Run static analysis tests")
-        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
+        booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
@@ -67,7 +66,7 @@ pipeline {
         }
         stage("Additional tests") {
             when {
-                expression { params.STATIC_ANALYSIS == true }
+                expression { params.ADDITIONAL_TESTS == true }
             }
             steps {
                 parallel(
