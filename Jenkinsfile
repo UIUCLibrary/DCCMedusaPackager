@@ -44,36 +44,16 @@ pipeline {
                                 }
                                 runner.run()
                             }
-//                            node(label: 'Windows') {
-//                                deleteDir()
-//                                unstash "source"
-//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-//                                    bat """
-//                          ${env.PYTHON3} -m venv .env
-//                                          call .env/Scripts/activate.bat
-//                                          pip install --upgrade setuptools
-//                                          pip install -r requirements.txt
-//                                          tox  --skip-missing-interpreters
-//                          """
-//                                }
-//                                junit 'reports/junit-*.xml'
-//
-//                            }
                         },
                         "Linux": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                          ${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install -r requirements.txt
-                          tox  --skip-missing-interpreters -e py35 || true
-                          """
-                                }
+                            def runner = new Tox(this)
+                            runner.windows = true
+                            runner.stash = "source"
+                            runner.label = "!Windows"
+                            runner.post = {
                                 junit 'reports/junit-*.xml'
                             }
+                            runner.run()
                         }
                 )
             }
