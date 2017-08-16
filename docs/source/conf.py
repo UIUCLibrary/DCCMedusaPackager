@@ -148,7 +148,7 @@ html_theme = 'alabaster'
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #
-html_logo = 'full_mark_horz_bw.gif'
+html_logo = '_static/full_mark_horz_bw.gif'
 
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -286,7 +286,7 @@ latex_logo = 'full_mark_horz_bw.eps'
 # If true, show URL addresses after external links.
 #
 # latex_show_urls = False
-latex_show_urls = True
+# latex_show_urls = True
 
 # Documents to append as an appendix to all manuals.
 #

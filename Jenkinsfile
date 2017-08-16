@@ -1,11 +1,17 @@
 #!groovy
+@Library("ds-utils")
+import org.ds.*
+
 pipeline {
     agent any
+    environment {
+        mypy_args = "--junit-xml=mypy.xml"
+        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
+    }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
-        booleanParam(name: "STATIC_ANALYSIS", defaultValue: true, description: "Run static analysis tests")
-        booleanParam(name: "BUILD_DOCS", defaultValue: true, description: "Build documentation")
+        booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
@@ -20,7 +26,7 @@ pipeline {
                 deleteDir()
                 echo "Cloning source"
                 checkout scm
-                stash includes: '**', name: "source"
+                stash includes: '**', name: "Source"
                 stash includes: 'deployment.yml', name: "Deployment"
 
             }
@@ -32,125 +38,93 @@ pipeline {
             steps {
                 parallel(
                         "Windows": {
-                            node(label: 'Windows') {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    bat """
-                          ${env.PYTHON3} -m venv .env
-                                          call .env/Scripts/activate.bat
-                                          pip install --upgrade setuptools
-                                          pip install -r requirements.txt
-                                          tox  --skip-missing-interpreters
-                          """
+                            script {
+                                def runner = new Tox(this)
+                                runner.windows = true
+                                runner.stash = "Source"
+                                runner.label = "Windows"
+                                runner.post = {
+                                    junit 'reports/junit-*.xml'
                                 }
-                                junit 'reports/junit-*.xml'
-
+                                runner.run()
                             }
                         },
                         "Linux": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                          ${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install -r requirements.txt
-                          tox  --skip-missing-interpreters -e py35 || true
-                          """
+                            script {
+                                def runner = new Tox(this)
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    junit 'reports/junit-*.xml'
                                 }
-                                junit 'reports/junit-*.xml'
+                                runner.run()
                             }
                         }
                 )
             }
         }
-        stage("Static Analysis") {
+        stage("Additional tests") {
             when {
-                expression { params.STATIC_ANALYSIS == true }
+                expression { params.ADDITIONAL_TESTS == true }
             }
             steps {
                 parallel(
-                        "mypy": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                          ${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install -r requirements.txt
-                          tox  --skip-missing-interpreters -e mypy || true
-                          """
+                        "MyPy": {
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "mypy"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    junit 'mypy.xml'
                                 }
-                                // sh "${env.TOX} -e mypy"
-                                publishHTML target: [
-                                        allowMissing         : false,
-                                        alwaysLinkToLastBuild: false,
-                                        keepAll              : true,
-                                        reportDir            : "reports/mypy_report",
-                                        reportFiles          : "index.html",
-                                        reportName           : "MyPy Report"
-                                ]
+                                runner.run()
+
+                            }
+                        },
+                        "Documentation": {
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "docs"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    dir('.tox/dist/html/') {
+                                        stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
+                                    }
+                                }
+                                runner.run()
+
                             }
                         },
                         "coverage": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                          ${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install -r requirements.txt
-                          tox  --skip-missing-interpreters -e coverage || true
-                          """
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "coverage"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    publishHTML target: [
+                                            allowMissing         : false,
+                                            alwaysLinkToLastBuild: false,
+                                            keepAll              : true,
+                                            reportDir            : "reports/cov_html",
+                                            reportFiles          : "index.html",
+                                            reportName           : "Coverage Report"
+                                    ]
                                 }
-                                // sh "${env.TOX} -e coverage"
-                                publishHTML target: [
-                                        allowMissing         : false,
-                                        alwaysLinkToLastBuild: false,
-                                        keepAll              : true,
-                                        reportDir            : "reports/cov_html",
-                                        reportFiles          : "index.html",
-                                        reportName           : "Coverage Report"
-                                ]
+                                runner.run()
+
                             }
                         }
                 )
             }
         }
-        stage("Documentation") {
-            agent any
-            when {
-                expression { params.BUILD_DOCS == true }
-            }
-            steps {
-                deleteDir()
-                unstash "source"
-                withEnv(['PYTHON=${env.PYTHON3}']) {
-                    sh """
-                  ${env.PYTHON3} -m venv .env
-                  . .env/bin/activate
-                  pip install -r requirements.txt
-                  cd docs && make html
 
-                  """
-
-                    // dir('docs') {
-                    //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
-                    // }
-                    stash includes: '**', name: "Documentation source", useDefaultExcludes: false
-                }
-            }
-            post {
-                success {
-                    sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-                }
-            }
-        }
         stage("Packaging") {
             when {
                 expression { params.PACKAGE == true }
@@ -158,26 +132,12 @@ pipeline {
             steps {
                 parallel(
                         "Source Package": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                    ${env.PYTHON3} -m venv .env
-                    . .env/bin/activate
-                    pip install -r requirements.txt
-                    python setup.py sdist
-                    """
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                                    }
-                                }
-                            }
+                            createSourceRelease(env.PYTHON3, "Source")
                         },
                         "Python Wheel:": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "source"
+                                unstash "Source"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                     bat """
                       ${env.PYTHON3} -m venv .env
@@ -194,7 +154,7 @@ pipeline {
                         "Python CX_Freeze Windows": {
                             node(label: "Windows") {
                                 deleteDir()
-                                unstash "source"
+                                unstash "Source"
                                 withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
                                     bat """
                       ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
@@ -212,19 +172,10 @@ pipeline {
         stage("Update online documentation") {
             agent any
             when {
-                expression { params.UPDATE_DOCS == true && params.BUILD_DOCS == true }
+                expression { params.UPDATE_DOCS == true }
             }
             steps {
-                deleteDir()
-                script {
-                    unstash "Documentation source"
-                    try {
-                        sh("rsync -rv -e \"ssh -i ${env.DCC_DOCS_KEY}\" docs/build/html/ ${env.DCC_DOCS_SERVER}/${params.URL_SUBFOLDER}/ --delete")
-                    } catch (error) {
-                        echo "Error with uploading docs"
-                        throw error
-                    }
-                }
+                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
         stage("Deploy - Staging") {
@@ -233,9 +184,7 @@ pipeline {
                 expression { params.DEPLOY == true && params.PACKAGE == true }
             }
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ \"${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/\""
+                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                 input("Deploy to production?")
             }
         }
@@ -246,23 +195,18 @@ pipeline {
                 expression { params.DEPLOY == true && params.PACKAGE == true }
             }
             steps {
-                deleteDir()
-                unstash "msi"
-                sh "rsync -rv ./ ${env.SCCM_UPLOAD_FOLDER}/"
+                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
             }
             post {
                 success {
-                    git url: 'https://github.com/UIUCLibrary/sccm_deploy_message_generator.git'
-                    unstash "Deployment"
-                    sh """${env.PYTHON3} -m venv .env
-                  . .env/bin/activate
-                  pip install --upgrade pip
-                  pip install setuptools --upgrade
-                  python setup.py install
-                  deploymessage deployment.yml --save=deployment_request.txt
-              """
-                    archiveArtifacts artifacts: "deployment_request.txt"
-                    echo(readFile('deployment_request.txt'))
+                    script{
+                        unstash "Source"
+                        def  deployment_request = requestDeploy this, "deployment.yml"
+                        echo deployment_request
+                        writeFile file: "deployment_request.txt", text: deployment_request
+                        archiveArtifacts artifacts: "deployment_request.txt"
+                    }
+
                 }
             }
         }
