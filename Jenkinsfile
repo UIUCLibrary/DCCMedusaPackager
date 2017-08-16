@@ -45,7 +45,7 @@ pipeline {
                                 runner.stash = "source"
                                 runner.label = "Windows"
                                 runner.post = {
-                                    junit 'junit-*.xml'
+                                    junit 'reports/junit-*.xml'
                                 }
                                 runner.run()
                             }
@@ -57,7 +57,7 @@ pipeline {
                                 runner.stash = "source"
                                 runner.label = "!Windows"
                                 runner.post = {
-                                    junit 'junit-*.xml'
+                                    junit 'reports/junit-*.xml'
                                 }
                                 runner.run()
                             }
