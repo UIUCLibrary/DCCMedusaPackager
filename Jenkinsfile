@@ -125,40 +125,7 @@ pipeline {
                 )
             }
         }
-//        stage("Documentation") {
-//            agent any
-//            when {
-//                expression { params.BUILD_DOCS == true }
-//            }
-//            steps {
-//                deleteDir()
-//                unstash "Source"
-//                withEnv(['PYTHON=${env.PYTHON3}']) {
-//                    sh """
-//                  ${env.PYTHON3} -m venv .env
-//                  . .env/bin/activate
-//                  pip install -r requirements.txt
-//                  cd docs && make html
-//
-//                  """
-//
-//                    // dir('docs') {
-//                    //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
-//                    // }
-//                    dir("docs/build/html") {
-//                        stash includes: '**', name: "Documentation source", useDefaultExcludes: false
-//                    }
-//
-//
-//                }
-//            }
-//            post {
-//                success {
-//                    sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-//                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-//                }
-//            }
-//        }
+
         stage("Packaging") {
             when {
                 expression { params.PACKAGE == true }
@@ -209,7 +176,7 @@ pipeline {
                 expression { params.UPDATE_DOCS == true }
             }
             steps {
-                updateOnlineDocs stash_name: "Documentation source", url_subdomain: params.URL_SUBFOLDER
+                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
         stage("Deploy - Staging") {
