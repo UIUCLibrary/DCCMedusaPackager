@@ -85,6 +85,22 @@ pipeline {
 
                             }
                         },
+                        "Documentation": {
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "docs"
+                                runner.windows = false
+                                runner.stash = "Source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    dir('.tox/dist/html/') {
+                                        stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
+                                    }
+                                }
+                                runner.run()
+
+                            }
+                        },
                         "coverage": {
                             script {
                                 def runner = new Tox(this)
@@ -109,40 +125,40 @@ pipeline {
                 )
             }
         }
-        stage("Documentation") {
-            agent any
-            when {
-                expression { params.BUILD_DOCS == true }
-            }
-            steps {
-                deleteDir()
-                unstash "Source"
-                withEnv(['PYTHON=${env.PYTHON3}']) {
-                    sh """
-                  ${env.PYTHON3} -m venv .env
-                  . .env/bin/activate
-                  pip install -r requirements.txt
-                  cd docs && make html
-
-                  """
-
-                    // dir('docs') {
-                    //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
-                    // }
-                    dir("docs/build/html") {
-                        stash includes: '**', name: "Documentation source", useDefaultExcludes: false
-                    }
-
-
-                }
-            }
-            post {
-                success {
-                    sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
-                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
-                }
-            }
-        }
+//        stage("Documentation") {
+//            agent any
+//            when {
+//                expression { params.BUILD_DOCS == true }
+//            }
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                withEnv(['PYTHON=${env.PYTHON3}']) {
+//                    sh """
+//                  ${env.PYTHON3} -m venv .env
+//                  . .env/bin/activate
+//                  pip install -r requirements.txt
+//                  cd docs && make html
+//
+//                  """
+//
+//                    // dir('docs') {
+//                    //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
+//                    // }
+//                    dir("docs/build/html") {
+//                        stash includes: '**', name: "Documentation source", useDefaultExcludes: false
+//                    }
+//
+//
+//                }
+//            }
+//            post {
+//                success {
+//                    sh 'tar -czvf sphinx_html_docs.tar.gz -C docs/build/html .'
+//                    archiveArtifacts artifacts: 'sphinx_html_docs.tar.gz'
+//                }
+//            }
+//        }
         stage("Packaging") {
             when {
                 expression { params.PACKAGE == true }
@@ -151,21 +167,6 @@ pipeline {
                 parallel(
                         "Source Package": {
                             createSourceRelease(env.PYTHON3, "Source")
-//                            node(label: "!Windows") {
-//                                deleteDir()
-//                                unstash "Source"
-//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-//                                    sh """
-//                    ${env.PYTHON3} -m venv .env
-//                    . .env/bin/activate
-//                    pip install -r requirements.txt
-//                    python setup.py sdist
-//                    """
-//                                    dir("dist") {
-//                                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-//                                    }
-//                                }
-//                            }
                         },
                         "Python Wheel:": {
                             node(label: "Windows") {
