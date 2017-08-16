@@ -215,16 +215,17 @@ pipeline {
                 expression { params.UPDATE_DOCS == true && params.BUILD_DOCS == true }
             }
             steps {
-                deleteDir()
-                script {
-                    unstash "Documentation source"
-                    try {
-                        sh("rsync -rv -e \"ssh -i ${env.DCC_DOCS_KEY}\" docs/build/html/ ${env.DCC_DOCS_SERVER}/${params.URL_SUBFOLDER}/ --delete")
-                    } catch (error) {
-                        echo "Error with uploading docs"
-                        throw error
-                    }
-                }
+                updateOnlineDocs stash_name: "Documentation source", url_subdomain: params.URL_SUBFOLDER
+//                deleteDir()
+//                script {
+//                    unstash "Documentation source"
+//                    try {
+//                        sh("rsync -rv -e \"ssh -i ${env.DCC_DOCS_KEY}\" docs/build/html/ ${env.DCC_DOCS_SERVER}/${params.URL_SUBFOLDER}/ --delete")
+//                    } catch (error) {
+//                        echo "Error with uploading docs"
+//                        throw error
+//                    }
+//                }
             }
         }
         stage("Deploy - Staging") {
