@@ -37,7 +37,7 @@ pipeline {
                             script {
                                 def runner = new Tox(this)
                                 runner.windows = true
-                                runner.stash = "Source"
+                                runner.stash = "source"
                                 runner.label = "Windows"
                                 runner.post = {
                                     junit 'reports/junit-*.xml'
