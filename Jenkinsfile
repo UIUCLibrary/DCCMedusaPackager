@@ -143,7 +143,9 @@ pipeline {
                     // dir('docs') {
                     //     sh 'make html SPHINXBUILD=$SPHINXBUILD'
                     // }
-                    stash includes: '**', name: "Documentation source", useDefaultExcludes: false
+//                    dir
+
+                    stash includes: 'docs/build/html/**', name: "Documentation source", useDefaultExcludes: false
                 }
             }
             post {
