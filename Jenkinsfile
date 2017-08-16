@@ -219,6 +219,8 @@ pipeline {
                 expression { params.UPDATE_DOCS == true && params.BUILD_DOCS == true }
             }
             steps {
+                unstash "Documentation source"
+                sh "ls -la"
                 updateOnlineDocs stash_name: "Documentation source", url_subdomain: params.URL_SUBFOLDER
 //                deleteDir()
 //                script {
