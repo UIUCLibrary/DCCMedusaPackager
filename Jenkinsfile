@@ -46,14 +46,16 @@ pipeline {
                             }
                         },
                         "Linux": {
-                            def runner = new Tox(this)
-                            runner.windows = true
-                            runner.stash = "source"
-                            runner.label = "!Windows"
-                            runner.post = {
-                                junit 'reports/junit-*.xml'
+                            script{
+                                def runner = new Tox(this)
+                                runner.windows = true
+                                runner.stash = "source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    junit 'reports/junit-*.xml'
+                                }
+                                runner.run()
                             }
-                            runner.run()
                         }
                 )
             }
