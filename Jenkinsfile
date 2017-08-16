@@ -85,19 +85,14 @@ pipeline {
                             }
                         },
                         "coverage": {
-                            node(label: "!Windows") {
-                                deleteDir()
-                                unstash "source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    sh """
-                          ${env.PYTHON3} -m venv .env
-                          . .env/bin/activate
-                          pip install -r requirements.txt
-                          tox  --skip-missing-interpreters -e coverage || true
-                          """
-                                }
-                                // sh "${env.TOX} -e coverage"
-                                publishHTML target: [
+                            script {
+                                def runner = new Tox(this)
+                                runner.env = "coverage"
+                                runner.windows = false
+                                runner.stash = "source"
+                                runner.label = "!Windows"
+                                runner.post = {
+                                    publishHTML target: [
                                         allowMissing         : false,
                                         alwaysLinkToLastBuild: false,
                                         keepAll              : true,
@@ -105,7 +100,31 @@ pipeline {
                                         reportFiles          : "index.html",
                                         reportName           : "Coverage Report"
                                 ]
+                                }
+                                runner.run()
+
                             }
+//                            node(label: "!Windows") {
+//                                deleteDir()
+//                                unstash "source"
+//                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+//                                    sh """
+//                          ${env.PYTHON3} -m venv .env
+//                          . .env/bin/activate
+//                          pip install -r requirements.txt
+//                          tox  --skip-missing-interpreters -e coverage || true
+//                          """
+//                                }
+//                                // sh "${env.TOX} -e coverage"
+//                                publishHTML target: [
+//                                        allowMissing         : false,
+//                                        alwaysLinkToLastBuild: false,
+//                                        keepAll              : true,
+//                                        reportDir            : "reports/cov_html",
+//                                        reportFiles          : "index.html",
+//                                        reportName           : "Coverage Report"
+//                                ]
+//                            }
                         }
                 )
             }
