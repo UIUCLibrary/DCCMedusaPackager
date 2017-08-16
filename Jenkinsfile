@@ -65,7 +65,7 @@ pipeline {
                 )
             }
         }
-        stage("Static Analysis") {
+        stage("Additional tests") {
             when {
                 expression { params.STATIC_ANALYSIS == true }
             }
