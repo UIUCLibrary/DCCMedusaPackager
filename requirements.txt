@@ -1,7 +1,6 @@
 tox
 pytest
 mypy
-mypy-lang
 pytest-cov
 cx-freeze
 wheel
