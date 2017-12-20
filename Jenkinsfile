@@ -51,20 +51,20 @@ pipeline {
                                 }
                             }
                         }
-                    },
-                    "Linux": {
-                        node(label: "Linux") {
-                            script {
-                                checkout scm
-                                try {
-                                    sh "${env.PYTHON3} -m tox"
-                                } catch (exc) {
-                                    junit 'reports/junit-*.xml'
-                                    error("Unit test Failed on Linux")
-                                }
-                            }
-                        }
                     }
+                    // "Linux": {
+                    //     node(label: "Linux") {
+                    //         script {
+                    //             checkout scm
+                    //             try {
+                    //                 sh "${env.PYTHON3} -m tox"
+                    //             } catch (exc) {
+                    //                 junit 'reports/junit-*.xml'
+                    //                 error("Unit test Failed on Linux")
+                    //             }
+                    //         }
+                    //     }
+                    // }
                 )
                 // parallel(
                 //         "Windows": {
