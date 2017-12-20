@@ -167,8 +167,10 @@ pipeline {
                                 pip install -r requirements-dev.txt
                                 python setup.py sdist bdist_wheel
                                 """
-                        archiveArtifacts artifacts: "*.whl", fingerprint: true
-                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                        dir("dist"){
+                            archiveArtifacts artifacts: "*.whl", fingerprint: true
+                            archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                        }
                     },
                     "Windows CX_Freeze MSI": {
                         node(label: "Windows") {
