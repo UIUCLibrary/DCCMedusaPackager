@@ -4,3 +4,4 @@ mypy
 pytest-cov
 wheel
 sphinx
+lxml
