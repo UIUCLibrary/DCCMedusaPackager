@@ -5,7 +5,8 @@ import argparse
 import sys
 
 import MedusaPackager
-
+from pkg_resources import get_distribution
+package_metadata = get_distribution(__package__)
 
 class Processor:
     """
@@ -58,18 +59,27 @@ def find_arg_problems(args):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser()
-    command_group = parser.add_mutually_exclusive_group()
+    try:
+        for line in package_metadata.get_metadata_lines(name="PKG-INFO"):
+            if line.startswith("Summary:"):
+                print(line)
 
-    information_group = command_group.add_mutually_exclusive_group()
-    information_group.add_argument("--version",
+
+        description = line
+    except FileNotFoundError as e:
+        description = "error: Unable to load description information"
+    parser = argparse.ArgumentParser(description)
+    parser.add_argument("--version",
                                    action="version",
-                                   version=MedusaPackager.__version__)
+                                   version=package_metadata.version)
 
-    process_group = command_group.add_argument_group()
-    process_group.add_argument('source', help="Directory for files to be sorted")
-    process_group.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
-    process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+    # process_group = command_group.add_argument_group()
+    parser.add_argument('source', help="Directory for files to be sorted")
+    parser.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
+    parser.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+    # process_group.add_argument('source', help="Directory for files to be sorted")
+    # process_group.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
+    # process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
 
     return parser
 
