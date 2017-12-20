@@ -174,6 +174,7 @@ pipeline {
                         node(label: "Windows") {
                             deleteDir()
                             checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m venv venv"
                             bat "make freeze"
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
