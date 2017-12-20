@@ -1,7 +1,1 @@
-tox
-pytest
-mypy
-pytest-cov
-cx-freeze
-wheel
-sphinx
+setuptools>=30.3.0
