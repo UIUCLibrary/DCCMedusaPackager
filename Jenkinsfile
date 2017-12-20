@@ -39,31 +39,59 @@ pipeline {
             }
             steps {
                 parallel(
-                        "Windows": {
+                    "Windows": {
+                        node(label: "Windows") {
                             script {
-                                def runner = new Tox(this)
-                                runner.windows = true
-                                runner.stash = "Source"
-                                runner.label = "Windows"
-                                runner.post = {
+                                checkout scm
+                                try {
+                                    bat "${tool 'Python3.6.3_Win64'} -m tox"
+                                } catch (exc) {
                                     junit 'reports/junit-*.xml'
+                                    error("Unit test Failed on Windows")
                                 }
-                                runner.run()
-                            }
-                        },
-                        "Linux": {
-                            script {
-                                def runner = new Tox(this)
-                                runner.windows = false
-                                runner.stash = "Source"
-                                runner.label = "!Windows"
-                                runner.post = {
-                                    junit 'reports/junit-*.xml'
-                                }
-                                runner.run()
                             }
                         }
+                    },
+                    "Linux": {
+                        node(label: "Linux") {
+                            script {
+                                checkout scm
+                                try {
+                                    sh "${env.PYTHON3} -m tox"
+                                } catch (exc) {
+                                    junit 'reports/junit-*.xml'
+                                    error("Unit test Failed on Linux")
+                                }
+                            }
+                        }
+                    }
                 )
+                // parallel(
+                //         "Windows": {
+                //             script {
+                //                 def runner = new Tox(this)
+                //                 runner.windows = true
+                //                 runner.stash = "Source"
+                //                 runner.label = "Windows"
+                //                 runner.post = {
+                //                     junit 'reports/junit-*.xml'
+                //                 }
+                //                 runner.run()
+                //             }
+                //         },
+                //         "Linux": {
+                //             script {
+                //                 def runner = new Tox(this)
+                //                 runner.windows = false
+                //                 runner.stash = "Source"
+                //                 runner.label = "!Windows"
+                //                 runner.post = {
+                //                     junit 'reports/junit-*.xml'
+                //                 }
+                //                 runner.run()
+                //             }
+                //         }
+                // )
             }
         }
         stage("Additional tests") {
