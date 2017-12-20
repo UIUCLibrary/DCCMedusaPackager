@@ -106,7 +106,7 @@ pipeline {
                                 runner.env = "mypy"
                                 runner.windows = true
                                 runner.stash = "Source"
-                                runner.label = "!Windows"
+                                runner.label = "Windows"
                                 runner.post = {
                                     junit 'mypy.xml'
                                 }
@@ -120,7 +120,7 @@ pipeline {
                                 runner.env = "docs"
                                 runner.windows = true
                                 runner.stash = "Source"
-                                runner.label = "!Windows"
+                                runner.label = "Windows"
                                 runner.post = {
                                     dir('.tox/dist/html/') {
                                         stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
