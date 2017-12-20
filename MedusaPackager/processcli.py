@@ -6,11 +6,13 @@ import sys
 
 import MedusaPackager
 
+
 class Processor:
     """
     Abstract base class for any addition type of jobs that need to be done. Intended to make building addition
     operations from a factory function.
     """
+
     def process(self, source, destination):
         pass
 
@@ -19,6 +21,7 @@ class MoveWorker(Processor):
     """
     Used for moving files.
     """
+
     def process(self, source, destination):
         """
         Used for moving files.
@@ -32,6 +35,7 @@ class CopyWorker(Processor):
     """
     Used for copy files.
     """
+
     def process(self, source, destination):
         """
         Used for copy files.
@@ -52,6 +56,7 @@ def find_arg_problems(args):
     if not os.path.exists(args.destination):
         yield "\"{}\" is not a valid destination.".format(args.destination)
 
+
 def build_parser():
     parser = argparse.ArgumentParser()
     command_group = parser.add_mutually_exclusive_group()
@@ -59,7 +64,6 @@ def build_parser():
     information_group = command_group.add_mutually_exclusive_group()
     information_group.add_argument("--version",
                                    action="version",
-                                   # help="Get version",
                                    version=MedusaPackager.__version__)
 
     process_group = command_group.add_argument_group()
@@ -68,6 +72,7 @@ def build_parser():
     process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
 
     return parser
+
 
 def setup():
     parser = build_parser()
@@ -81,7 +86,6 @@ def setup():
 
         exit(1)
     return args
-
 
 
 def get_worker(args):
