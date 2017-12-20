@@ -14,6 +14,7 @@ pipeline {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
+        booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
