@@ -1,0 +1,4 @@
+six
+appdirs
+packaging
+cx-freeze

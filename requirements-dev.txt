@@ -1,0 +1,6 @@
+tox
+pytest
+mypy
+pytest-cov
+wheel
+sphinx
