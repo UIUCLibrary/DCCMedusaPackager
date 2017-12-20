@@ -1,3 +1,4 @@
+import os
 import pytest
 from cx_Freeze import setup, Executable
 import MedusaPackager
@@ -44,6 +45,12 @@ shortcut_table = [
 INCLUDE_FILES = [
     "documentation.url"
 ]
+PYTHON_INSTALL_DIR = os.path.dirname(os.path.dirname(os.__file__))
+MSVC = os.path.join(PYTHON_INSTALL_DIR, 'vcruntime140.dll')
+
+if os.path.exists(MSVC):
+    INCLUDE_FILES.append(MSVC)
+
 build_exe_options = {
     "includes":        pytest.freeze_includes(),
     "include_msvcr": True,
