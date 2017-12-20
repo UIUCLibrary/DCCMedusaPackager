@@ -2,7 +2,7 @@ import os
 import pytest
 from setuptools.config import read_configuration
 from cx_Freeze import setup, Executable
-import MedusaPackager
+# import MedusaPackager
 import platform
 
 
@@ -30,14 +30,14 @@ directory_table = [
     (
         "PMenu",  # Directory
         "ProgramMenuFolder",  # Directory_parent
-        create_msi_tablename(MedusaPackager.__title__, MedusaPackager.FULL_TITLE)
+        create_msi_tablename(metadata["name"], metadata["name"])
     ),
 ]
 shortcut_table = [
     (
         "startmenuShortcutDoc",  # Shortcut
         "PMenu",  # Directory_
-        "{} Documentation".format(create_msi_tablename(MedusaPackager.__title__, MedusaPackager.FULL_TITLE)),
+        "{} Documentation".format(create_msi_tablename(metadata["name"], metadata["name"])),
         "TARGETDIR",  # Component_
         "[TARGETDIR]documentation.url",  # Target
         None,  # Arguments
@@ -85,7 +85,7 @@ setup(
     packages=[
         'MedusaPackager',
     ],
-    url=MedusaPackager.__url__,
+    url=metadata["url"],
     executables={
         Executable("MedusaPackager/__main__.py",
                    targetName=("{}.exe".format(EXECUTABLE_NAME) if platform.system() == "Windows" else EXECUTABLE_NAME))
