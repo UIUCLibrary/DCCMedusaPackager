@@ -5,8 +5,8 @@ import argparse
 import sys
 
 import MedusaPackager
-from pkg_resources import get_distribution
-package_metadata = get_distribution(__package__)
+from pkg_resources import get_distribution, DistributionNotFound
+
 
 class Processor:
     """
@@ -60,18 +60,24 @@ def find_arg_problems(args):
 
 def build_parser():
     try:
+        package_metadata = get_distribution(__package__)
+        version = package_metadata.version
         for line in package_metadata.get_metadata_lines(name="PKG-INFO"):
             if line.startswith("Summary:"):
-                print(line)
-
-
-        description = line
+                description = line
+                break
+        else:
+            description = "error: Unable to load description information"
+    except DistributionNotFound as e:
+        description = "error: Unable to load description information"
+        version="unknown"
     except FileNotFoundError as e:
         description = "error: Unable to load description information"
+        version="unknown"
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--version",
                                    action="version",
-                                   version=package_metadata.version)
+                                   version=version)
 
     # process_group = command_group.add_argument_group()
     parser.add_argument('source', help="Directory for files to be sorted")
