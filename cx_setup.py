@@ -1,9 +1,17 @@
 import os
 import pytest
+from setuptools.config import read_configuration
 from cx_Freeze import setup, Executable
 import MedusaPackager
 import platform
 
+
+
+def get_project_metadata():
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "setup.cfg"))
+    return read_configuration(path)["metadata"]
+# import imgvalidator
+metadata = get_project_metadata()
 
 def create_msi_tablename(python_name, fullname):
     shortname = python_name[:6].replace("_", "").upper()
@@ -69,11 +77,11 @@ build_exe_options = {
     "excludes": ["tkinter"],
 }
 setup(
-    name=MedusaPackager.FULL_TITLE,
-    version=MedusaPackager.__version__,
-    description=MedusaPackager.__description__,
-    author=MedusaPackager.__author__,
-    author_email=MedusaPackager.__author_email__,
+    name=metadata["name"],
+    description=metadata["description"],
+    version=metadata["version"],
+    author=metadata["author"],
+    author_email=metadata["author_email"],
     packages=[
         'MedusaPackager',
     ],
@@ -85,6 +93,7 @@ setup(
     },
     options={"build_exe": build_exe_options,
         "bdist_msi": {
+            "upgrade_code": "146B1585-F0FB-4212-87D6-E19C4EE38FB4",
             "data": {
                 "Shortcut": shortcut_table,
                 "Directory": directory_table
