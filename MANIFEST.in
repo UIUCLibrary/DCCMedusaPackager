@@ -1,0 +1,7 @@
+# Include the license file
+include LICENSE README.rst requirements.txt requirements-dev.txt Makefile docs/make.bat docs/Makefile.bat
+include tox.ini
+include pytest.ini
+recursive-include tests *.py
+recursive-include docs/source *
+prune docs/build
