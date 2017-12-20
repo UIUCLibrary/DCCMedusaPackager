@@ -1,3 +1,4 @@
+import pytest
 from cx_Freeze import setup, Executable
 import MedusaPackager
 import platform
@@ -43,7 +44,23 @@ shortcut_table = [
 INCLUDE_FILES = [
     "documentation.url"
 ]
-
+build_exe_options = {
+    "includes":        pytest.freeze_includes(),
+    "include_msvcr": True,
+    "include_files": INCLUDE_FILES,
+    "packages": [
+        "os",
+        'pytest',
+        "packaging",
+        "six",
+        "appdirs",
+        "unittest",
+        "unittest.mock",
+        # # "tests",
+        "MedusaPackager"
+    ],
+    "excludes": ["tkinter"],
+}
 setup(
     name=MedusaPackager.FULL_TITLE,
     version=MedusaPackager.__version__,
@@ -55,14 +72,11 @@ setup(
     ],
     url=MedusaPackager.__url__,
     executables={
-        Executable("MedusaPackager/processcli.py",
+        Executable("MedusaPackager/__main__.py",
                    targetName=("{}.exe".format(EXECUTABLE_NAME) if platform.system() == "Windows" else EXECUTABLE_NAME))
 
     },
-    options={"build_exe": {
-        "include_msvcr": True,
-        "include_files": INCLUDE_FILES,
-    },
+    options={"build_exe": build_exe_options,
         "bdist_msi": {
             "data": {
                 "Shortcut": shortcut_table,
