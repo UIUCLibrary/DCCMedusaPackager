@@ -131,41 +131,70 @@ pipeline {
             }
             steps {
                 parallel(
-                        "Source Package": {
-                            createSourceRelease(env.PYTHON3, "Source")
-                        },
-                        "Python Wheel:": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    bat """
-                      ${env.PYTHON3} -m venv .env
-                      call .env/Scripts/activate.bat
-                      pip install -r requirements.txt
-                      python setup.py bdist_wheel
-                    """
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.whl", fingerprint: true
-                                    }
-                                }
+                    "Source and Wheel formats": {
+                        bat """${tool 'Python3.6.3_Win64'} -m venv venv
+                                call venv\\Scripts\\activate.bat
+                                pip install -r requirements-dev.txt
+                                python setup.py sdist bdist_wheel
+                                """
+                        archiveArtifacts artifacts: "*.whl", fingerprint: true
+                        archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                    },
+                    "Windows CX_Freeze MSI": {
+                        node(label: "Windows") {
+                            deleteDir()
+                            checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m venv venv"
+                            bat "make freeze"
+                            dir("dist") {
+                                stash includes: "*.msi", name: "msi"
+                                archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
-                        },
-                        "Python CX_Freeze Windows": {
-                            node(label: "Windows") {
-                                deleteDir()
-                                unstash "Source"
-                                withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                                    bat """
-                      ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
-                    """
-                                    dir("dist") {
-                                        archiveArtifacts artifacts: "*.msi", fingerprint: true
-                                        stash includes: "*.msi", name: "msi"
-                                    }
-                                }
-                            }
+
                         }
+                        node(label: "Windows") {
+                            deleteDir()
+                            git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
+                            unstash "msi"
+                            bat "call validate.bat -i"
+                            
+                        }
+                    },
+                    //     "Source Package": {
+                    //         createSourceRelease(env.PYTHON3, "Source")
+                    //     },
+                    //     "Python Wheel:": {
+                    //         node(label: "Windows") {
+                    //             deleteDir()
+                    //             unstash "Source"
+                    //             withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                    //                 bat """
+                    //   ${env.PYTHON3} -m venv .env
+                    //   call .env/Scripts/activate.bat
+                    //   pip install -r requirements.txt
+                    //   python setup.py bdist_wheel
+                    // """
+                    //                 dir("dist") {
+                    //                     archiveArtifacts artifacts: "*.whl", fingerprint: true
+                    //                 }
+                    //             }
+                    //         }
+                    //     },
+                        // "Python CX_Freeze Windows": {
+                        //     node(label: "Windows") {
+                        //         deleteDir()
+                        //         unstash "Source"
+                        //         withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
+                        //             bat """
+                        //                 ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
+                        //                 """
+                        //             dir("dist") {
+                        //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
+                        //                 stash includes: "*.msi", name: "msi"
+                        //             }
+                        //         }
+                        //     }
+                        // }
                 )
             }
         }
