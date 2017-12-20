@@ -134,9 +134,9 @@ pipeline {
                             script {
                                 def runner = new Tox(this)
                                 runner.env = "coverage"
-                                runner.windows = false
+                                runner.windows = true
                                 runner.stash = "Source"
-                                runner.label = "!Windows"
+                                runner.label = "Windows"
                                 runner.post = {
                                     publishHTML target: [
                                             allowMissing         : false,
