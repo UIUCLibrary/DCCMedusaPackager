@@ -15,10 +15,11 @@ pipeline {
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
-        booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
-        booleanParam(name: "DEPLOY", defaultValue: false, description: "Deploy SCCM")
+        // booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
+        // booleanParam(name: "DEPLOY", defaultValue: false, description: "Deploy SCCM")
     }
 
     stages {
@@ -158,7 +159,7 @@ pipeline {
 
         stage("Packaging") {
             when {
-                expression { params.PACKAGE == true }
+                expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
             }
             steps {
                 parallel(
@@ -232,15 +233,7 @@ pipeline {
                 )
             }
         }
-        stage("Update online documentation") {
-            agent any
-            when {
-                expression { params.UPDATE_DOCS == true }
-            }
-            steps {
-                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
-            }
-        }
+
         stage("Deploying to Devpi") {
             when {
                 expression { params.DEPLOY_DEVPI == true }
@@ -329,36 +322,91 @@ pipeline {
                 }
             }
         }
-        stage("Deploy - Staging") {
-            agent any
-            when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
-            }
-            steps {
-                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                input("Deploy to production?")
-            }
-        }
+        // stage("Deploy - Staging") {
+        //     agent any
+        //     when {
+        //         expression { params.DEPLOY == true && params.PACKAGE == true }
+        //     }
+        //     steps {
+        //         deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+        //         input("Deploy to production?")
+        //     }
+        // }
 
-        stage("Deploy - SCCM upload") {
-            agent any
+        // stage("Deploy - SCCM upload") {
+        //     agent any
+        //     when {
+        //         expression { params.DEPLOY == true && params.PACKAGE == true }
+        //     }
+        //     steps {
+        //         deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+        //     }
+        //     post {
+        //         success {
+        //             script{
+        //                 unstash "Source"
+        //                 def  deployment_request = requestDeploy this, "deployment.yml"
+        //                 echo deployment_request
+        //                 writeFile file: "deployment_request.txt", text: deployment_request
+        //                 archiveArtifacts artifacts: "deployment_request.txt"
+        //             }
+
+        //         }
+        //     }
+        // }
+        stage("Deploy to SCCM") {
             when {
-                expression { params.DEPLOY == true && params.PACKAGE == true }
+                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
             }
+
             steps {
-                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                node("Linux"){
+                    unstash "msi"
+                    deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                    input("Push a SCCM release?")
+                    deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                }
+
             }
             post {
                 success {
                     script{
-                        unstash "Source"
                         def  deployment_request = requestDeploy this, "deployment.yml"
                         echo deployment_request
                         writeFile file: "deployment_request.txt", text: deployment_request
                         archiveArtifacts artifacts: "deployment_request.txt"
                     }
+                }
+            }
+        }
+        stage("Release to DevPi production") {
+            when {
+                expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+            }
+            steps {
+                script {
+                    def name = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --name").trim()
+                    def version = bat(returnStdout: true, script: "@${tool 'Python3.6.3_Win64'} setup.py --version").trim()
+                    input("Are you sure you want to push ${name} version ${version} to production? This version cannot be overwritten.")
+                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                        bat "${tool 'Python3.6.3_Win64'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "${tool 'Python3.6.3_Win64'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "${tool 'Python3.6.3_Win64'} -m devpi push ${name}==${version} production/release"
+                    }
 
                 }
+                node("Linux"){
+                    updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
+                }
+            }
+        }
+        stage("Update online documentation") {
+            agent any
+            when {
+                expression { params.UPDATE_DOCS == true }
+            }
+            steps {
+                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
     }
