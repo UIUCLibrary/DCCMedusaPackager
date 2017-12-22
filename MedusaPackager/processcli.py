@@ -60,7 +60,7 @@ def find_arg_problems(args):
 
 def build_parser():
     try:
-        package_metadata = get_distribution(__package__)
+        package_metadata = get_distribution(str(__package__))
         version = package_metadata.version
         for line in package_metadata.get_metadata_lines(name="PKG-INFO"):
             if line.startswith("Summary:"):
