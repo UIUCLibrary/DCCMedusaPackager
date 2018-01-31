@@ -57,7 +57,9 @@ goto :eof
     call:venv
     setlocal
     echo Installing development requirements
-    call venv\Scripts\activate.bat && pip install -r requirements-dev.txt --upgrade-strategy only-if-needed
+    call venv\Scripts\activate.bat 
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
     endlocal
 goto :eof
 
@@ -189,7 +191,7 @@ goto :eof
 	if exist .mypy_cache rd /q /s .mypy_cache       && echo Removed .mypy_cache
 	if exist .eggs rd /q /s .eggs                   && echo Removed .eggs
 	if exist .tox rd /q /s .tox                     && echo Removed .tox
-	if exist DCCMedusaPackager.egg-info rd /q /s DCCMedusaPackager.egg-info && echo Removed DCCMedusaPackager.egg-info
+	if exist MedusaPackager.egg-info rd /q /s MedusaPackager.egg-info && echo Removed MedusaPackager.egg-info
 	endlocal
 goto :eof
 
