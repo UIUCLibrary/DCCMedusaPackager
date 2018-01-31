@@ -120,20 +120,20 @@ pipeline {
             }
             steps {
                 parallel(
-                        "MyPy": {
-                            script {
-                                def runner = new Tox(this)
-                                runner.env = "mypy"
-                                runner.windows = true
-                                runner.stash = "Source"
-                                runner.label = "Windows"
-                                runner.post = {
-                                    junit 'mypy.xml'
-                                }
-                                runner.run()
+                        // "MyPy": {
+                        //     script {
+                        //         def runner = new Tox(this)
+                        //         runner.env = "mypy"
+                        //         runner.windows = true
+                        //         runner.stash = "Source"
+                        //         runner.label = "Windows"
+                        //         runner.post = {
+                        //             junit 'mypy.xml'
+                        //         }
+                        //         runner.run()
 
-                            }
-                        },
+                        //     }
+                        // },
                         "Documentation": {
                             script {
                                 def runner = new Tox(this)
