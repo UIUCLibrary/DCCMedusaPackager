@@ -8,7 +8,7 @@ pipeline {
     }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
-        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
+        // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
@@ -41,61 +41,86 @@ pipeline {
             }
             steps {
                 parallel(
-                    "Windows": {
+                    "PyTest": {
                         node(label: "Windows") {
-                            script {
-                                checkout scm
-                                try {
-                                    bat "${tool 'Python3.6.3_Win64'} -m tox"
-                                } catch (exc) {
-                                    junit 'reports/junit-*.xml'
-                                    error("Unit test Failed on Windows")
-                                }
-                            }
+                            checkout scm
+                            // bat "${tool 'Python3.6.3_Win64'} -m tox -e py36"
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" //  --basetemp={envtmpdir}" 
+                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                         }
+                    },
+                    "Behave": {
+                        node(label: "Windows") {
+                            checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m tox -e behave --  --junit --junit-directory reports" 
+                            junit "reports/*.xml"
                         }
                     }
-                    // "Linux": {
-                    //     node(label: "Linux") {
-                    //         script {
-                    //             checkout scm
-                    //             try {
-                    //                 sh "${env.PYTHON3} -m tox"
-                    //             } catch (exc) {
-                    //                 junit 'reports/junit-*.xml'
-                    //                 error("Unit test Failed on Linux")
-                    //             }
-                    //         }
-                    //     }
-                    // }
                 )
-                // parallel(
-                //         "Windows": {
-                //             script {
-                //                 def runner = new Tox(this)
-                //                 runner.windows = true
-                //                 runner.stash = "Source"
-                //                 runner.label = "Windows"
-                //                 runner.post = {
-                //                     junit 'reports/junit-*.xml'
-                //                 }
-                //                 runner.run()
-                //             }
-                //         },
-                //         "Linux": {
-                //             script {
-                //                 def runner = new Tox(this)
-                //                 runner.windows = false
-                //                 runner.stash = "Source"
-                //                 runner.label = "!Windows"
-                //                 runner.post = {
-                //                     junit 'reports/junit-*.xml'
-                //                 }
-                //                 runner.run()
-                //             }
-                //         }
-                // )
+                
             }
         }
+        // stage("Unit tests") {
+        //     when {
+        //         expression { params.UNIT_TESTS == true }
+        //     }
+        //     steps {
+        //         parallel(
+        //             "Windows": {
+        //                 node(label: "Windows") {
+        //                     script {
+        //                         checkout scm
+        //                         try {
+        //                             bat "${tool 'Python3.6.3_Win64'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" 
+        //                         } catch (exc) {
+        //                             junit 'reports/junit-*.xml'
+        //                             error("Unit test Failed on Windows")
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //             // "Linux": {
+        //             //     node(label: "Linux") {
+        //             //         script {
+        //             //             checkout scm
+        //             //             try {
+        //             //                 sh "${env.PYTHON3} -m tox"
+        //             //             } catch (exc) {
+        //             //                 junit 'reports/junit-*.xml'
+        //             //                 error("Unit test Failed on Linux")
+        //             //             }
+        //             //         }
+        //             //     }
+        //             // }
+        //         )
+        //         // parallel(
+        //         //         "Windows": {
+        //         //             script {
+        //         //                 def runner = new Tox(this)
+        //         //                 runner.windows = true
+        //         //                 runner.stash = "Source"
+        //         //                 runner.label = "Windows"
+        //         //                 runner.post = {
+        //         //                     junit 'reports/junit-*.xml'
+        //         //                 }
+        //         //                 runner.run()
+        //         //             }
+        //         //         },
+        //         //         "Linux": {
+        //         //             script {
+        //         //                 def runner = new Tox(this)
+        //         //                 runner.windows = false
+        //         //                 runner.stash = "Source"
+        //         //                 runner.label = "!Windows"
+        //         //                 runner.post = {
+        //         //                     junit 'reports/junit-*.xml'
+        //         //                 }
+        //         //                 runner.run()
+        //         //             }
+        //         //         }
+        //         // )
+        //     }
+        // }
         stage("Additional tests") {
             when {
                 expression { params.ADDITIONAL_TESTS == true }
@@ -131,28 +156,28 @@ pipeline {
                                 runner.run()
 
                             }
-                        },
-                        "coverage": {
-                            script {
-                                def runner = new Tox(this)
-                                runner.env = "coverage"
-                                runner.windows = true
-                                runner.stash = "Source"
-                                runner.label = "Windows"
-                                runner.post = {
-                                    publishHTML target: [
-                                            allowMissing         : false,
-                                            alwaysLinkToLastBuild: false,
-                                            keepAll              : true,
-                                            reportDir            : "reports/cov_html",
-                                            reportFiles          : "index.html",
-                                            reportName           : "Coverage Report"
-                                    ]
-                                }
-                                runner.run()
-
-                            }
                         }
+                        // "coverage": {
+                        //     script {
+                        //         def runner = new Tox(this)
+                        //         runner.env = "coverage"
+                        //         runner.windows = true
+                        //         runner.stash = "Source"
+                        //         runner.label = "Windows"
+                        //         runner.post = {
+                        //             publishHTML target: [
+                        //                     allowMissing         : false,
+                        //                     alwaysLinkToLastBuild: false,
+                        //                     keepAll              : true,
+                        //                     reportDir            : "reports/cov_html",
+                        //                     reportFiles          : "index.html",
+                        //                     reportName           : "Coverage Report"
+                        //             ]
+                        //         }
+                        //         runner.run()
+
+                        //     }
+                        // }
                 )
             }
         }
