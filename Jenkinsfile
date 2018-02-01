@@ -124,8 +124,9 @@ pipeline {
                      
                         node(label: "Windows") {
                             checkout scm
-                            bat "${tool 'Python3.6.3_Win64'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml"
+                            bat "${tool 'Python3.6.3_Win64'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                             junit "junit-${env.NODE_NAME}-mypy.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                          }
                     },
                         //     script {
