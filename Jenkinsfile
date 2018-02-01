@@ -120,7 +120,14 @@ pipeline {
             }
             steps {
                 parallel(
-                        // "MyPy": {
+                    "MyPy": {
+                     
+                        node(label: "Windows") {
+                            checkout scm
+                            bat "${tool 'Python3.6.3_Win64'} -m mypy --junit-xml=reports/junit-${env.NODE_NAME}-mypy.xml"
+                            junit "reports/junit-${env.NODE_NAME}-mypy.xml"
+                         }
+                    }
                         //     script {
                         //         def runner = new Tox(this)
                         //         runner.env = "mypy"
@@ -150,27 +157,6 @@ pipeline {
 
                             }
                         }
-                        // "coverage": {
-                        //     script {
-                        //         def runner = new Tox(this)
-                        //         runner.env = "coverage"
-                        //         runner.windows = true
-                        //         runner.stash = "Source"
-                        //         runner.label = "Windows"
-                        //         runner.post = {
-                        //             publishHTML target: [
-                        //                     allowMissing         : false,
-                        //                     alwaysLinkToLastBuild: false,
-                        //                     keepAll              : true,
-                        //                     reportDir            : "reports/cov_html",
-                        //                     reportFiles          : "index.html",
-                        //                     reportName           : "Coverage Report"
-                        //             ]
-                        //         }
-                        //         runner.run()
-
-                        //     }
-                        // }
                 )
             }
         }
