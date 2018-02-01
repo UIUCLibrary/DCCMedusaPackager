@@ -59,7 +59,7 @@ goto :eof
     echo Installing development requirements
     call venv\Scripts\activate.bat 
     pip install -r requirements.txt
-    pip install -r requirements-dev.txt
+    pip install -r requirements-dev.txt --upgrade-strategy only-if-needed
     endlocal
 goto :eof
 
@@ -153,7 +153,7 @@ goto :eof
 :mypy
     call:install-dev
     setlocal
-    call venv\Scripts\activate.bat && mypy -p dcc_jp2_converter %*
+    call venv\Scripts\activate.bat && mypy -p MedusaPackager %*
     endlocal
 goto :eof
 
