@@ -127,7 +127,7 @@ pipeline {
                             bat "${tool 'Python3.6.3_Win64'} -m mypy --junit-xml=reports/junit-${env.NODE_NAME}-mypy.xml"
                             junit "reports/junit-${env.NODE_NAME}-mypy.xml"
                          }
-                    }
+                    },
                         //     script {
                         //         def runner = new Tox(this)
                         //         runner.env = "mypy"
