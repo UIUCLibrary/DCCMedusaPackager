@@ -124,7 +124,7 @@ pipeline {
                      
                         node(label: "Windows") {
                             checkout scm
-                            bat "${tool 'Python3.6.3_Win64'} -m mypy --junit-xml=reports/junit-${env.NODE_NAME}-mypy.xml"
+                            bat "${tool 'Python3.6.3_Win64'} -m mypy -p MedusaPackager --junit-xml=reports/junit-${env.NODE_NAME}-mypy.xml"
                             junit "reports/junit-${env.NODE_NAME}-mypy.xml"
                          }
                     },
