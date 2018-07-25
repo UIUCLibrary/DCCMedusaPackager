@@ -6,6 +6,11 @@ pipeline {
     agent {
         label "Windows"
     }
+    options {
+        disableConcurrentBuilds()  //each branch has 1 job running at a time
+        timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
+        // checkoutToSubdirectory("source")
+    }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
@@ -145,20 +150,21 @@ pipeline {
                         //     }
                         // },
                         "Documentation": {
-                            script {
-                                def runner = new Tox(this)
-                                runner.env = "docs"
-                                runner.windows = true
-                                runner.stash = "Source"
-                                runner.label = "Windows"
-                                runner.post = {
-                                    dir('.tox/dist/html/') {
-                                        stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
-                                    }
-                                }
-                                runner.run()
+                            bat "${tool 'CPython-3.6'} -m tox -e docs"
+                            // script {
+                            //     def runner = new Tox(this)
+                            //     runner.env = "docs"
+                            //     runner.windows = true
+                            //     runner.stash = "Source"
+                            //     runner.label = "Windows"
+                            //     runner.post = {
+                            //         dir('.tox/dist/html/') {
+                            //             stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
+                            //         }
+                            //     }
+                            //     runner.run()
 
-                            }
+                            // }
                         }
                 )
             }
