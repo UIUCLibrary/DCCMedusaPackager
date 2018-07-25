@@ -44,9 +44,12 @@ pipeline {
                     steps {
                         deleteDir()
                         echo "Cloning source"
-                        checkout scm
-                        stash includes: '**', name: "Source"
-                        stash includes: 'deployment.yml', name: "Deployment"
+                        dir("source"){
+                            checkout scm
+                            stash includes: '**', name: "Source"
+                            stash includes: 'deployment.yml', name: "Deployment"
+                        }
+
 
                     }
                 }
