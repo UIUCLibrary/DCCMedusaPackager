@@ -188,6 +188,16 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
+        stage("Building"){
+            steps{
+                echo "Building docs on ${env.NODE_NAME}"
+                tee("logs/build_sphinx.log") {
+                    dir("build/lib"){
+                        bat "venv\\Scripts\\sphinx-build -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+                    }
+                }
+            }
+        }
         stage("Additional tests") {
             when {
                 expression { params.ADDITIONAL_TESTS == true }
@@ -385,7 +395,8 @@ junit_filename                  = ${junit_filename}
                     script {
                         bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
                         try {
-                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+//                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+                            bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
