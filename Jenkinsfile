@@ -72,10 +72,10 @@ pipeline {
                         script {
                             // Set up the reports directory variable 
                             REPORT_DIR = "${pwd tmp: true}\\reports"
-                            dir("source"){
+//                            dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                            }
+//                            }
                         }
 
                         script{
