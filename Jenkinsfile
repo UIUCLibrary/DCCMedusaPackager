@@ -306,7 +306,6 @@ junit_filename                  = ${junit_filename}
                     agent{
                         node {
                             label "Windows"
-                            customWorkspace 'freeze'
                         }
                     }
                     options {
