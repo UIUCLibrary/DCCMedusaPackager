@@ -361,136 +361,137 @@ pipeline {
             when {
                 expression { params.DEPLOY_DEVPI == true }
             }
-            steps {
-                parallel {
-                    stage("Source Distribution: .tar.gz") {
-                        environment {
-                            PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                        }
-                        steps {
-                            echo "Testing Source tar.gz package in devpi"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        
-                            }
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-
-                            script {                          
-                                def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz  --verbose"
-                                if(devpi_test_return_code != 0){   
-                                    error "Devpi exit code for tar.gz was ${devpi_test_return_code}"
-                                }
-                            }
-                            echo "Finished testing Source Distribution: .tar.gz"
-                        }
-                        post {
-                            failure {
-                                echo "Tests for .tar.gz source on DevPi failed."
-                            }
-                        }
-
+//            steps {
+            parallel {
+                stage("Source Distribution: .tar.gz") {
+                    environment {
+                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
                     }
-                    stage("Source Distribution: .zip") {
-                        environment {
-                            PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
+                    steps {
+                        echo "Testing Source tar.gz package in devpi"
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+
                         }
-                        steps {
-                            echo "Testing Source zip package in devpi"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+
+                        script {
+                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz  --verbose"
+                            if(devpi_test_return_code != 0){
+                                error "Devpi exit code for tar.gz was ${devpi_test_return_code}"
                             }
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                            script {
-                                def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --verbose"
-                                if(devpi_test_return_code != 0){   
-                                    error "Devpi exit code for zip was ${devpi_test_return_code}"
-                                }
-                            }
-                            echo "Finished testing Source Distribution: .zip"
                         }
-                        post {
-                            failure {
-                                echo "Tests for .zip source on DevPi failed."
-                            }
+                        echo "Finished testing Source Distribution: .tar.gz"
+                    }
+                    post {
+                        failure {
+                            echo "Tests for .tar.gz source on DevPi failed."
                         }
                     }
-                    stage("Built Distribution: .whl") {
-                        agent {
-                            node {
-                                label "Windows && Python3"
+
+                }
+                stage("Source Distribution: .zip") {
+                    environment {
+                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
+                    }
+                    steps {
+                        echo "Testing Source zip package in devpi"
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        script {
+                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --verbose"
+                            if(devpi_test_return_code != 0){
+                                error "Devpi exit code for zip was ${devpi_test_return_code}"
                             }
                         }
-                        options {
-                            skipDefaultCheckout(true)
-                        }
-                        steps {
-                            echo "Testing Whl package in devpi"
-                            bat "${tool 'CPython-3.6'} -m venv venv"
-                            bat "venv\\Scripts\\pip.exe install tox devpi-client"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"                        
-                            }
-                            bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                            script{
-                                def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl  --verbose"
-                                if(devpi_test_return_code != 0){   
-                                    error "Devpi exit code for whl was ${devpi_test_return_code}"
-                                }
-                            }
-                            echo "Finished testing Built Distribution: .whl"
-                        }
-                        post {
-                            failure {
-                                echo "Tests for whl on DevPi failed."
-                            }
+                        echo "Finished testing Source Distribution: .zip"
+                    }
+                    post {
+                        failure {
+                            echo "Tests for .zip source on DevPi failed."
                         }
                     }
-                // parallel(
-                //         "Source": {
-                //             script {
-                //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                //                 node("Windows") {
-                //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                //                         echo "Testing Source package in devpi"
-                //                         script {
-                //                              def devpi_test = bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz").trim()
-                //                              if(devpi_test =~ 'tox command failed') {
-                //                                 error("Tox command failed")
-                //                             }
-                //                         }
-                //                     }
-                //                 }
-
-                //             }
-                //         },
-                //         "Wheel": {
-                //             script {
-                //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                //                 node("Windows") {
-                //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                //                         echo "Testing Whl package in devpi"
-                //                         script {
-                //                             def devpi_test =  bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl").trim()
-                //                             if(devpi_test =~ 'tox command failed') {
-                //                                 error("Tox command failed")
-                //                             }
-                                            
-                //                         }
-
-                //                     }
-                //                 }
-
-                //             }
-                //         }
-                // )
-
+                }
+                stage("Built Distribution: .whl") {
+                    agent {
+                        node {
+                            label "Windows && Python3"
+                        }
+                    }
+                    options {
+                        skipDefaultCheckout(true)
+                    }
+                    steps {
+                        echo "Testing Whl package in devpi"
+                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "venv\\Scripts\\pip.exe install tox devpi-client"
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        }
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        script{
+                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s whl  --verbose"
+                            if(devpi_test_return_code != 0){
+                                error "Devpi exit code for whl was ${devpi_test_return_code}"
+                            }
+                        }
+                        echo "Finished testing Built Distribution: .whl"
+                    }
+                    post {
+                        failure {
+                            echo "Tests for whl on DevPi failed."
+                        }
+                    }
+                }
             }
+            // parallel(
+            //         "Source": {
+            //             script {
+            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+            //                 node("Windows") {
+            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+            //                         echo "Testing Source package in devpi"
+            //                         script {
+            //                              def devpi_test = bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz").trim()
+            //                              if(devpi_test =~ 'tox command failed') {
+            //                                 error("Tox command failed")
+            //                             }
+            //                         }
+            //                     }
+            //                 }
+
+            //             }
+            //         },
+            //         "Wheel": {
+            //             script {
+            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
+            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
+            //                 node("Windows") {
+            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+            //                         echo "Testing Whl package in devpi"
+            //                         script {
+            //                             def devpi_test =  bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl").trim()
+            //                             if(devpi_test =~ 'tox command failed') {
+            //                                 error("Tox command failed")
+            //                             }
+
+            //                         }
+
+            //                     }
+            //                 }
+
+            //             }
+            //         }
+            // )
+
+//            }
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
