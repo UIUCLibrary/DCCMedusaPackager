@@ -123,19 +123,40 @@ pipeline {
             when {
                 expression { params.ADDITIONAL_TESTS == true }
             }
-            steps {
-                parallel(
-                    "MyPy": {
-                     
-                        node(label: "Windows") {
-                            checkout scm
+            // steps {
+                parallel{
+                    stage("MyPy"){
+                        agent{
+                            node {
+                                label "Windows && Python3"    
+                            }
+                        }
+                        steps{
                             bat "call make.bat install-dev"
                             bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                             // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                             junit "junit-${env.NODE_NAME}-mypy.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                         }
-                    },
+                        }
+                    }
+                    stage("Documentation"){
+                        steps{
+                            bat "${tool 'CPython-3.6'} -m tox -e docs"
+                        }
+
+                    }
+                }
+                    // "MyPy": {
+                     
+                    //     node(label: "Windows") {
+                    //         checkout scm
+                    //         bat "call make.bat install-dev"
+                    //         bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                    //         // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                    //         junit "junit-${env.NODE_NAME}-mypy.xml"
+                    //         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                    //      }
+                    // },
                         //     script {
                         //         def runner = new Tox(this)
                         //         runner.env = "mypy"
@@ -149,25 +170,25 @@ pipeline {
 
                         //     }
                         // },
-                        "Documentation": {
-                            bat "${tool 'CPython-3.6'} -m tox -e docs"
-                            // script {
-                            //     def runner = new Tox(this)
-                            //     runner.env = "docs"
-                            //     runner.windows = true
-                            //     runner.stash = "Source"
-                            //     runner.label = "Windows"
-                            //     runner.post = {
-                            //         dir('.tox/dist/html/') {
-                            //             stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
-                            //         }
-                            //     }
-                            //     runner.run()
+                        // "Documentation": {
+                        //     bat "${tool 'CPython-3.6'} -m tox -e docs"
+                        //     // script {
+                        //     //     def runner = new Tox(this)
+                        //     //     runner.env = "docs"
+                        //     //     runner.windows = true
+                        //     //     runner.stash = "Source"
+                        //     //     runner.label = "Windows"
+                        //     //     runner.post = {
+                        //     //         dir('.tox/dist/html/') {
+                        //     //             stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
+                        //     //         }
+                        //     //     }
+                        //     //     runner.run()
 
-                            // }
-                        }
-                )
-            }
+                        //     // }
+                        // }
+                // )
+            // }
         }
 
         stage("Packaging") {
