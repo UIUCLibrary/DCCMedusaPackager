@@ -5,12 +5,15 @@ import argparse
 import sys
 
 import MedusaPackager
+from pkg_resources import get_distribution, DistributionNotFound
+
 
 class Processor:
     """
     Abstract base class for any addition type of jobs that need to be done. Intended to make building addition
     operations from a factory function.
     """
+
     def process(self, source, destination):
         pass
 
@@ -19,6 +22,7 @@ class MoveWorker(Processor):
     """
     Used for moving files.
     """
+
     def process(self, source, destination):
         """
         Used for moving files.
@@ -32,6 +36,7 @@ class CopyWorker(Processor):
     """
     Used for copy files.
     """
+
     def process(self, source, destination):
         """
         Used for copy files.
@@ -52,22 +57,38 @@ def find_arg_problems(args):
     if not os.path.exists(args.destination):
         yield "\"{}\" is not a valid destination.".format(args.destination)
 
+
 def build_parser():
-    parser = argparse.ArgumentParser()
-    command_group = parser.add_mutually_exclusive_group()
-
-    information_group = command_group.add_mutually_exclusive_group()
-    information_group.add_argument("--version",
+    try:
+        package_metadata = get_distribution(str(__package__))
+        version = package_metadata.version
+        for line in package_metadata.get_metadata_lines(name="PKG-INFO"):
+            if line.startswith("Summary:"):
+                description = line
+                break
+        else:
+            description = "error: Unable to load description information"
+    except DistributionNotFound as e:
+        description = "error: Unable to load description information"
+        version="unknown"
+    except FileNotFoundError as e:
+        description = "error: Unable to load description information"
+        version="unknown"
+    parser = argparse.ArgumentParser(description)
+    parser.add_argument("--version",
                                    action="version",
-                                   # help="Get version",
-                                   version=MedusaPackager.__version__)
+                                   version=version)
 
-    process_group = command_group.add_argument_group()
-    process_group.add_argument('source', help="Directory for files to be sorted")
-    process_group.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
-    process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+    # process_group = command_group.add_argument_group()
+    parser.add_argument('source', help="Directory for files to be sorted")
+    parser.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
+    parser.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
+    # process_group.add_argument('source', help="Directory for files to be sorted")
+    # process_group.add_argument('destination', default=os.getcwd(), help="Directory to put the new files")
+    # process_group.add_argument('--copy', action="store_true", help="Copy files instead of moving them.")
 
     return parser
+
 
 def setup():
     parser = build_parser()
@@ -81,7 +102,6 @@ def setup():
 
         exit(1)
     return args
-
 
 
 def get_worker(args):
