@@ -648,9 +648,9 @@ junit_filename                  = ${junit_filename}
                     }
 
                 }
-                node("Linux"){
-                    updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
-                }
+                // node("Linux"){
+                //     updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
+                // }
             }
         }
         stage("Update online documentation") {
@@ -659,7 +659,32 @@ junit_filename                  = ${junit_filename}
                 expression { params.UPDATE_DOCS == true }
             }
             steps {
-                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
+                dir("build/docs/html/"){
+                    bat "dir /s"
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'apache-ns - lib-dccuser-updater', 
+                                sshLabel: [label: 'Linux'], 
+                                transfers: [sshTransfer(excludes: '', 
+                                execCommand: '', 
+                                execTimeout: 120000, 
+                                flatten: false, 
+                                makeEmptyDirs: false, 
+                                noDefaultExcludes: false, 
+                                patternSeparator: '[, ]+', 
+                                remoteDirectory: "${params.URL_SUBFOLDER}", 
+                                remoteDirectorySDF: false, 
+                                removePrefix: '', 
+                                sourceFiles: '**')], 
+                            usePromotionTimestamp: false, 
+                            useWorkspaceInPromotion: false, 
+                            verbose: true
+                            )
+                        ]
+                    )
+                }
+                // updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
     }
