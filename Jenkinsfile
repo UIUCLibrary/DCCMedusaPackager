@@ -73,6 +73,11 @@ pipeline {
                             echo "Cleaned out reports directory"
                             bat "dir"
                         }
+                        dir("dist"){
+                            deleteDir()
+                            echo "Cleaned out dist directory"
+                            bat "dir"
+                        }
                     }
                 }
                 stage("Creating virtualenv for building"){
