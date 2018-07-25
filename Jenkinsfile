@@ -163,6 +163,7 @@ pipeline {
             }
             post{
                 always{
+                    bat "dir /s"
                     echo """Name                            = ${PKG_NAME}
 Version                         = ${PKG_VERSION}
 Report Directory                = ${REPORT_DIR}
