@@ -310,6 +310,8 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         bat "dir"
+                        deleteDir()
+                        bat "dir"
                         checkout scm
                         bat "dir /s"
                         bat "${tool 'CPython-3.6'} -m venv venv"
@@ -493,7 +495,7 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                     options {
-                        skipDefaultCheckout(true)
+                        skipDefaultCheckout()
                     }
                     steps {
                         echo "Testing Whl package in devpi"
