@@ -597,9 +597,9 @@ junit_filename                  = ${junit_filename}
                             echo "Unable to successfully run clean. Purging source directory."
                             deleteDir()
                         }
-                        bat "dir"
                     }
                 }
+                bat "dir"
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
@@ -610,7 +610,7 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
-            bat "dir /s"
+//            bat "dir /s"
         }
     }
 }
