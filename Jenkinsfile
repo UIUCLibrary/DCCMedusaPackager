@@ -270,14 +270,16 @@ junit_filename                  = ${junit_filename}
                             label "Windows"
                         }
                     }
+                    options {
+                        skipDefaultCheckout(true)
+                    }
                     steps{
                             // deleteDir()
-                            // checkout scm
+                        bat "dir"
+                        checkout scm
                         bat "dir /s"
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        dir("source"){
-                            bat "make freeze"
-                        }
+                        bat "make freeze"
 
 
                     }
