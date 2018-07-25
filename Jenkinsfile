@@ -332,7 +332,13 @@ junit_filename                  = ${junit_filename}
         }
         stage("Test Devpi packages") {
             when {
-                expression { params.DEPLOY_DEVPI == true }
+                allOf{
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    anyOf {
+                        equals expected: "master", actual: env.BRANCH_NAME
+                        equals expected: "dev", actual: env.BRANCH_NAME
+                    }
+                }
             }
 //            steps {
             parallel {
