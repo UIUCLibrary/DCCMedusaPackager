@@ -159,7 +159,9 @@ pipeline {
                             }
                         }
                         steps{
-                            bat "call make.bat install-dev"
+                            bat "${tool 'CPython-3.6'} -m venv venv"
+//                            bat "call make.bat install-dev"
+                            bat "venv\\Scripts\\pip.exe install mypy"
                             bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                             // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                             junit "junit-${env.NODE_NAME}-mypy.xml"
