@@ -18,7 +18,7 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
-        // checkoutToSubdirectory("source")
+        checkoutToSubdirectory("source")
     }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
@@ -64,6 +64,27 @@ pipeline {
                         }    
                         bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest flake8 --upgrade-strategy only-if-needed"
+                        
+                        tee("logs/pippackages_venv_${NODE_NAME}.log") {
+                            bat "venv\\Scripts\\pip.exe list"
+                        }
+                    }
+                    post{
+                        always{
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_venv_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                        failure {
+                            deleteDir()
+                        }
                     }
                 }
                 stage("Setting variables used by the rest of the build"){
@@ -72,10 +93,10 @@ pipeline {
                         script {
                             // Set up the reports directory variable 
                             REPORT_DIR = "${pwd tmp: true}\\reports"
-//                            dir("source"){
+                           dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-//                            }
+                           }
                         }
 
                         script{
@@ -128,7 +149,10 @@ junit_filename                  = ${junit_filename}
             parallel {
                 stage("PyTest"){
                     steps{
-                        bat "venv\\Scripts\\pytest.exe --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                        dir("source"){
+                            bat "venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                        }
+                        
                     }
                     post {
                         always{
@@ -154,7 +178,10 @@ junit_filename                  = ${junit_filename}
                         // bat "${tool 'CPython-3.6'} -m venv venv"
 //                            bat "call make.bat install-dev"
                         // bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                        dir("source") {
+                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+                        }
+                        
                         // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
 
                     }
@@ -166,15 +193,19 @@ junit_filename                  = ${junit_filename}
                     }
                 }
                 stage("Documentation"){
-                    agent{
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
+                    // agent{
+                    //     node {
+                    //         label "Windows && Python3"
+                    //     }
+                    // }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox"
-                        bat "venv\\Scripts\\tox.exe -e docs"
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v" 
+                        }
+                        
+                        // bat "${tool 'CPython-3.6'} -m venv venv"
+                        // bat "venv\\Scripts\\pip.exe install tox"
+                        // bat "venv\\Scripts\\tox.exe -e docs"
                     }
 
                 }
@@ -188,12 +219,15 @@ junit_filename                  = ${junit_filename}
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
-                        bat """${tool 'CPython-3.6'} -m venv venv
-                                call venv\\Scripts\\activate.bat
-                                pip install -r requirements.txt
-                                pip install -r requirements-dev.txt
-                                python setup.py sdist bdist_wheel
-                                """
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                        }
+                        
+                        // bat """call ${WORKSPACE}\\venv\\Scripts\\activate.bat
+                        //        pip install -r requirements.txt
+                        //        pip install -r requirements-dev.txt
+                        //        python setup.py sdist bdist_wheel
+                        //         """
 
                     }
                     post{
@@ -342,9 +376,6 @@ junit_filename                  = ${junit_filename}
 //            steps {
             parallel {
                 stage("Source Distribution: .tar.gz") {
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                    }
                     steps {
                         echo "Testing Source tar.gz package in devpi"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -369,9 +400,6 @@ junit_filename                  = ${junit_filename}
 
                 }
                 stage("Source Distribution: .zip") {
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                    }
                     steps {
                         echo "Testing Source zip package in devpi"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
