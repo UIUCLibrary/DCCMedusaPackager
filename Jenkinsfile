@@ -43,6 +43,7 @@ pipeline {
                 }
                 stage("Creating virtualenv for building"){
                     steps{
+                        bat "${tool 'CPython-3.6'} -m venv venv"
                         script {
                             try {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
@@ -62,19 +63,27 @@ pipeline {
             when {
                 expression { params.UNIT_TESTS == true }
             }
-            steps {
-                parallel(
-                    "PyTest": {
-                        node(label: "Windows") {
-                            checkout scm
-                            bat "${tool 'CPython-3.6'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}" 
+            // steps {
+                parallel {
+                    stage("PyTest"){
+                        steps{
+                            bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}" 
                             junit "reports/junit-${env.NODE_NAME}-pytest.xml"
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                         }
+                        }
                     }
-                )
+                }
+                //     "PyTest": {
+                //         // node(label: "Windows") {
+                //             // checkout scm
+                //             // bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}" 
+                //             // junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                //             // publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                //          }
+                //     }
+                // )
                 
-            }
+            // }
         }
         // stage("Unit tests") {
         //     when {
