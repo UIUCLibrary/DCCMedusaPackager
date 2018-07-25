@@ -222,9 +222,10 @@ pipeline {
             when {
                 expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
             }
-            steps {
-                parallel(
-                    "Source and Wheel formats": {
+            // steps {
+            parallel {
+                stage("Source and Wheel formats"){
+                    steps{
                         bat """${tool 'CPython-3.6'} -m venv venv
                                 call venv\\Scripts\\activate.bat
                                 pip install -r requirements.txt
@@ -235,27 +236,58 @@ pipeline {
                             archiveArtifacts artifacts: "*.whl", fingerprint: true
                             archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
                         }
-                    },
-                    "Windows CX_Freeze MSI": {
-                        node(label: "Windows") {
-                            deleteDir()
-                            checkout scm
-                            bat "${tool 'CPython-3.6'} -m venv venv"
-                            bat "make freeze"
-                            dir("dist") {
-                                stash includes: "*.msi", name: "msi"
-                                archiveArtifacts artifacts: "*.msi", fingerprint: true
-                            }
+                    }
+                }
+                stage("Windows CX_Freeze MSI"){
+                    agent{
+                        node {
+                            label "Windows"
+                        }
+                    }
+                    steps{
+                            // deleteDir()
+                            // checkout scm
+                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "make freeze"
+                        dir("dist") {
+                            stash includes: "*.msi", name: "msi"
+                            archiveArtifacts artifacts: "*.msi", fingerprint: true
+                        }
+                    }
+                }
+                // parallel(
+                    // "Source and Wheel formats": {
+                    //     bat """${tool 'CPython-3.6'} -m venv venv
+                    //             call venv\\Scripts\\activate.bat
+                    //             pip install -r requirements.txt
+                    //             pip install -r requirements-dev.txt
+                    //             python setup.py sdist bdist_wheel
+                    //             """
+                    //     dir("dist"){
+                    //         archiveArtifacts artifacts: "*.whl", fingerprint: true
+                    //         archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                    //     }
+                    // },
+                    // "Windows CX_Freeze MSI": {
+                    //     node(label: "Windows") {
+                    //         deleteDir()
+                    //         checkout scm
+                    //         bat "${tool 'CPython-3.6'} -m venv venv"
+                    //         bat "make freeze"
+                    //         dir("dist") {
+                    //             stash includes: "*.msi", name: "msi"
+                    //             archiveArtifacts artifacts: "*.msi", fingerprint: true
+                    //         }
 
-                        }
-                        node(label: "Windows") {
-                            deleteDir()
-                            git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
-                            unstash "msi"
-                            bat "call validate.bat -i"
+                    //     }
+                    //     node(label: "Windows") {
+                    //         deleteDir()
+                    //         git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
+                    //         unstash "msi"
+                    //         bat "call validate.bat -i"
                             
-                        }
-                    },
+                    //     }
+                    // },
                     //     "Source Package": {
                     //         createSourceRelease(env.PYTHON3, "Source")
                     //     },
@@ -291,7 +323,7 @@ pipeline {
                         //         }
                         //     }
                         // }
-                )
+                // )
             }
         }
 
