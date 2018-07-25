@@ -58,7 +58,7 @@ pipeline {
                         }
                     }
                 }
-                stage("stashing inportant files for later"){
+                stage("Stashing important files for later"){
                     steps{
                         dir("source"){
                             stash includes: '**', name: "Source"
