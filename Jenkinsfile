@@ -177,27 +177,6 @@ junit_filename                  = ${junit_filename}
                 
             }
         }
-        stage("Unit tests") {
-            when {
-                expression { params.UNIT_TESTS == true }
-            }
-            parallel {
-                stage("PyTest"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
-                        }
-                        
-                    }
-                    post {
-                        always{
-                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                        }
-                    }
-                }
-            }
-        }
         stage("Build"){
             stages{
                 stage("Python Package"){
@@ -278,6 +257,27 @@ junit_filename                  = ${junit_filename}
                         }
                     }
 
+                }
+            }
+        }
+        stage("Unit tests") {
+            when {
+                expression { params.UNIT_TESTS == true }
+            }
+            parallel {
+                stage("PyTest"){
+                    steps{
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                        }
+
+                    }
+                    post {
+                        always{
+                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                        }
+                    }
                 }
             }
         }
