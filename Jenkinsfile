@@ -18,13 +18,14 @@ pipeline {
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
-        // checkoutToSubdirectory("source")
+        checkoutToSubdirectory("source")
     }
     environment {
         mypy_args = "--junit-xml=mypy.xml"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
+        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
@@ -39,15 +40,48 @@ pipeline {
     stages {
         stage("Configure") {
             stages{
-                stage("Cloning Source") {
-                    agent any
+                stage("Purge all existing data in workspace"){
+                    when{
+                        equals expected: true, actual: params.FRESH_WORKSPACE
+                    }
                     steps {
                         deleteDir()
+                        bat "dir"
                         echo "Cloning source"
-                        checkout scm
-                        stash includes: '**', name: "Source"
-                        stash includes: 'deployment.yml', name: "Deployment"
-
+                        dir("source"){
+                            checkout scm
+                        }
+                    }
+                    post{
+                        success {
+                            bat "dir /s /B"
+                        }
+                    }
+                }
+                stage("Stashing important files for later"){
+                    steps{
+                        dir("source"){
+                            stash includes: 'deployment.yml', name: "Deployment"
+                        }
+                    }
+                }
+                stage("Cleanup extra dirs"){
+                    steps{
+                        dir("reports"){
+                            deleteDir()
+                            echo "Cleaned out reports directory"
+                            bat "dir"
+                        }
+                        dir("dist"){
+                            deleteDir()
+                            echo "Cleaned out dist directory"
+                            bat "dir"
+                        }
+                        dir("build"){
+                            deleteDir()
+                            echo "Cleaned out build directory"
+                            bat "dir"
+                        }
                     }
                 }
                 stage("Creating virtualenv for building"){
@@ -63,7 +97,28 @@ pipeline {
                             }                           
                         }    
                         bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install tox mypy pytest flake8 --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest pytest-cov flake8 sphinx wheel --upgrade-strategy only-if-needed"
+                        
+                        tee("logs/pippackages_venv_${NODE_NAME}.log") {
+                            bat "venv\\Scripts\\pip.exe list"
+                        }
+                    }
+                    post{
+                        always{
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/pippackages_venv_*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                        failure {
+                            deleteDir()
+                        }
                     }
                 }
                 stage("Setting variables used by the rest of the build"){
@@ -72,10 +127,10 @@ pipeline {
                         script {
                             // Set up the reports directory variable 
                             REPORT_DIR = "${pwd tmp: true}\\reports"
-//                            dir("source"){
+                           dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-//                            }
+                           }
                         }
 
                         script{
@@ -107,6 +162,7 @@ pipeline {
             }
             post{
                 always{
+                    bat "dir /s / B"
                     echo """Name                            = ${PKG_NAME}
 Version                         = ${PKG_VERSION}
 Report Directory                = ${REPORT_DIR}
@@ -121,43 +177,78 @@ junit_filename                  = ${junit_filename}
                 
             }
         }
-        stage("Unit tests") {
-            when {
-                expression { params.UNIT_TESTS == true }
-            }
-            // steps {
-                parallel {
-                    stage("PyTest"){
-                        steps{
-                            bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+        stage("Build"){
+            stages{
+                stage("Python Package"){
+                    steps {
+                        tee("logs/build.log") {
+                            dir("source"){
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build"
+                            }
+
                         }
-                        post {
-                            always{
-                                junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                    }
+                }
+                stage("Docs"){
+                    steps{
+                        echo "Building docs on ${env.NODE_NAME}"
+                        tee("logs/build_sphinx.log") {
+                            dir("build/lib"){
+                                bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+                            }
+                        }
+                    }
+                    post{
+                        always {
+                            dir("logs"){
+                                script{
+                                    def log_files = findFiles glob: '**/*.log'
+                                    log_files.each { log_file ->
+                                        echo "Found ${log_file}"
+                                        archiveArtifacts artifacts: "${log_file}"
+                                        bat "del ${log_file}"
+                                    }
+                                }
+                            }
+                        }
+                        success{
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            dir("${WORKSPACE}/dist"){
+                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
                             }
                         }
                     }
                 }
-        }
-        stage("Additional tests") {
-            when {
-                expression { params.ADDITIONAL_TESTS == true }
             }
-            parallel{
-                stage("MyPy"){
-                    agent{
-                        node {
-                            label "Windows && Python3"
-                        }
+        }
+        stage("Tests") {
+
+            parallel {
+                stage("PyTest"){
+                    when {
+                        equals expected: true, actual: params.UNIT_TESTS
                     }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-//                            bat "call make.bat install-dev"
-                        bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                        // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                        }
 
+                    }
+                    post {
+                        always{
+                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                        }
+                    }
+                }
+                stage("MyPy"){
+                    when{
+                        equals expected: true, actual: params.ADDITIONAL_TESTS
+                    }
+                    steps{
+                        dir("source") {
+                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+                        }
                     }
                     post{
                         always {
@@ -167,35 +258,39 @@ junit_filename                  = ${junit_filename}
                     }
                 }
                 stage("Documentation"){
-                    agent{
-                        node {
-                            label "Windows && Python3"
-                        }
+                    when{
+                        equals expected: true, actual: params.ADDITIONAL_TESTS
                     }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "venv\\Scripts\\pip.exe install tox"
-                        bat "venv\\Scripts\\tox.exe -e docs"
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v"
+                        }
                     }
 
                 }
             }
         }
+//        stage("Additional tests") {
+//
+//            when {
+//
+//            }
+//            parallel{
+//
+//            }
+//        }
+
         stage("Packaging") {
             when {
                 expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
             }
-            // steps {
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
-                        bat """${tool 'CPython-3.6'} -m venv venv
-                                call venv\\Scripts\\activate.bat
-                                pip install -r requirements.txt
-                                pip install -r requirements-dev.txt
-                                python setup.py sdist bdist_wheel
-                                """
-
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                        }
+                        
                     }
                     post{
                         success{
@@ -212,11 +307,18 @@ junit_filename                  = ${junit_filename}
                             label "Windows"
                         }
                     }
+                    options {
+                        skipDefaultCheckout true
+                    }
                     steps{
-                            // deleteDir()
-                            // checkout scm
+                        bat "dir"
+                        deleteDir()
+                        bat "dir"
+                        checkout scm
+                        bat "dir /s / B"
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "make freeze"
+
 
                     }
                     post{
@@ -226,77 +328,13 @@ junit_filename                  = ${junit_filename}
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
+                        cleanup{
+                            bat "dir"
+                            deleteDir()
+                            bat "dir"
+                        }
                     }
                 }
-                // parallel(
-                    // "Source and Wheel formats": {
-                    //     bat """${tool 'CPython-3.6'} -m venv venv
-                    //             call venv\\Scripts\\activate.bat
-                    //             pip install -r requirements.txt
-                    //             pip install -r requirements-dev.txt
-                    //             python setup.py sdist bdist_wheel
-                    //             """
-                    //     dir("dist"){
-                    //         archiveArtifacts artifacts: "*.whl", fingerprint: true
-                    //         archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                    //     }
-                    // },
-                    // "Windows CX_Freeze MSI": {
-                    //     node(label: "Windows") {
-                    //         deleteDir()
-                    //         checkout scm
-                    //         bat "${tool 'CPython-3.6'} -m venv venv"
-                    //         bat "make freeze"
-                    //         dir("dist") {
-                    //             stash includes: "*.msi", name: "msi"
-                    //             archiveArtifacts artifacts: "*.msi", fingerprint: true
-                    //         }
-
-                    //     }
-                    //     node(label: "Windows") {
-                    //         deleteDir()
-                    //         git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
-                    //         unstash "msi"
-                    //         bat "call validate.bat -i"
-                            
-                    //     }
-                    // },
-                    //     "Source Package": {
-                    //         createSourceRelease(env.PYTHON3, "Source")
-                    //     },
-                    //     "Python Wheel:": {
-                    //         node(label: "Windows") {
-                    //             deleteDir()
-                    //             unstash "Source"
-                    //             withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                    //                 bat """
-                    //   ${env.PYTHON3} -m venv .env
-                    //   call .env/Scripts/activate.bat
-                    //   pip install -r requirements.txt
-                    //   python setup.py bdist_wheel
-                    // """
-                    //                 dir("dist") {
-                    //                     archiveArtifacts artifacts: "*.whl", fingerprint: true
-                    //                 }
-                    //             }
-                    //         }
-                    //     },
-                        // "Python CX_Freeze Windows": {
-                        //     node(label: "Windows") {
-                        //         deleteDir()
-                        //         unstash "Source"
-                        //         withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                        //             bat """
-                        //                 ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
-                        //                 """
-                        //             dir("dist") {
-                        //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
-                        //                 stash includes: "*.msi", name: "msi"
-                        //             }
-                        //         }
-                        //     }
-                        // }
-                // )
             }
         }
 
@@ -310,9 +348,6 @@ junit_filename                  = ${junit_filename}
                     }
                 }
             }
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true }
-            // }
             steps {
                 bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -321,7 +356,8 @@ junit_filename                  = ${junit_filename}
                     script {
                         bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
                         try {
-                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+//                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+                            bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
                         } catch (exc) {
                             echo "Unable to upload to devpi with docs."
                         }
@@ -343,9 +379,6 @@ junit_filename                  = ${junit_filename}
 //            steps {
             parallel {
                 stage("Source Distribution: .tar.gz") {
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                    }
                     steps {
                         echo "Testing Source tar.gz package in devpi"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -370,9 +403,6 @@ junit_filename                  = ${junit_filename}
 
                 }
                 stage("Source Distribution: .zip") {
-                    environment {
-                        PATH = "${tool 'CMake_3.11.4'}\\;$PATH"
-                    }
                     steps {
                         echo "Testing Source zip package in devpi"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -400,7 +430,7 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                     options {
-                        skipDefaultCheckout(true)
+                        skipDefaultCheckout()
                     }
                     steps {
                         echo "Testing Whl package in devpi"
@@ -425,64 +455,16 @@ junit_filename                  = ${junit_filename}
                     }
                 }
             }
-            // parallel(
-            //         "Source": {
-            //             script {
-            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-            //                 node("Windows") {
-            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-            //                         echo "Testing Source package in devpi"
-            //                         script {
-            //                              def devpi_test = bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz").trim()
-            //                              if(devpi_test =~ 'tox command failed') {
-            //                                 error("Tox command failed")
-            //                             }
-            //                         }
-            //                     }
-            //                 }
 
-            //             }
-            //         },
-            //         "Wheel": {
-            //             script {
-            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-            //                 node("Windows") {
-            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-            //                         echo "Testing Whl package in devpi"
-            //                         script {
-            //                             def devpi_test =  bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl").trim()
-            //                             if(devpi_test =~ 'tox command failed') {
-            //                                 error("Tox command failed")
-            //                             }
-
-            //                         }
-
-            //                     }
-            //                 }
-
-            //             }
-            //         }
-            // )
-
-//            }
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
                     script {
-                        def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                        def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${name}==${version} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
-
                     }
                 }
             }
@@ -550,18 +532,19 @@ junit_filename                  = ${junit_filename}
             }
             steps {
                 script {
-                    def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-                    def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-                    input("Are you sure you want to push ${name} version ${version} to production? This version cannot be overwritten.")
-                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        bat "${tool 'CPython-3.6'} -m devpi push ${name}==${version} production/release"
-                    }
+                    try{
+                        timeout(30) {
+                            input "Release ${PKG_NAME} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${PKG_NAME}/${PKG_VERSION}) to DevPi Production? "
+                        }
+                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        }
 
-                }
-                node("Linux"){
-                    updateOnlineDocs url_subdomain: params.URL_SUBFOLDER, stash_name: "HTML Documentation"
+                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
+                    } catch(err){
+                        echo "User response timed out. Packages not deployed to DevPi Production."
+                    }
                 }
             }
         }
@@ -571,13 +554,52 @@ junit_filename                  = ${junit_filename}
                 expression { params.UPDATE_DOCS == true }
             }
             steps {
-                updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
+                dir("build/docs/html/"){
+                    bat "dir /s /B"
+                    sshPublisher(
+                        publishers: [
+                            sshPublisherDesc(
+                                configName: 'apache-ns - lib-dccuser-updater', 
+                                sshLabel: [label: 'Linux'], 
+                                transfers: [sshTransfer(excludes: '', 
+                                execCommand: '', 
+                                execTimeout: 120000, 
+                                flatten: false, 
+                                makeEmptyDirs: false, 
+                                noDefaultExcludes: false, 
+                                patternSeparator: '[, ]+', 
+                                remoteDirectory: "${params.URL_SUBFOLDER}", 
+                                remoteDirectorySDF: false, 
+                                removePrefix: '', 
+                                sourceFiles: '**')], 
+                            usePromotionTimestamp: false, 
+                            useWorkspaceInPromotion: false, 
+                            verbose: true
+                            )
+                        ]
+                    )
+                }
+                // updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
             }
         }
     }
     post{
         cleanup{
+
             script {
+                if(fileExists('source/setup.py')){
+                    dir("source"){
+                        try{
+                            retry(3) {
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
+                            }
+                        } catch (Exception ex) {
+                            echo "Unable to successfully run clean. Purging source directory."
+                            deleteDir()
+                        }
+                    }
+                }
+                bat "dir"
                 if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                         bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
@@ -588,7 +610,7 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
-            bat "dir"
+//            bat "dir /s / B"
         }
     }
 }
