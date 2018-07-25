@@ -77,165 +77,48 @@ pipeline {
                         }
                     }
                 }
-                //     "PyTest": {
-                //         // node(label: "Windows") {
-                //             // checkout scm
-                //             // bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}" 
-                //             // junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                //             // publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                //          }
-                //     }
-                // )
-                
-            // }
         }
-        // stage("Unit tests") {
-        //     when {
-        //         expression { params.UNIT_TESTS == true }
-        //     }
-        //     steps {
-        //         parallel(
-        //             "Windows": {
-        //                 node(label: "Windows") {
-        //                     script {
-        //                         checkout scm
-        //                         try {
-        //                             bat "${tool 'CPython-3.6'} -m tox -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest" 
-        //                         } catch (exc) {
-        //                             junit 'reports/junit-*.xml'
-        //                             error("Unit test Failed on Windows")
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //             // "Linux": {
-        //             //     node(label: "Linux") {
-        //             //         script {
-        //             //             checkout scm
-        //             //             try {
-        //             //                 sh "${env.PYTHON3} -m tox"
-        //             //             } catch (exc) {
-        //             //                 junit 'reports/junit-*.xml'
-        //             //                 error("Unit test Failed on Linux")
-        //             //             }
-        //             //         }
-        //             //     }
-        //             // }
-        //         )
-        //         // parallel(
-        //         //         "Windows": {
-        //         //             script {
-        //         //                 def runner = new Tox(this)
-        //         //                 runner.windows = true
-        //         //                 runner.stash = "Source"
-        //         //                 runner.label = "Windows"
-        //         //                 runner.post = {
-        //         //                     junit 'reports/junit-*.xml'
-        //         //                 }
-        //         //                 runner.run()
-        //         //             }
-        //         //         },
-        //         //         "Linux": {
-        //         //             script {
-        //         //                 def runner = new Tox(this)
-        //         //                 runner.windows = false
-        //         //                 runner.stash = "Source"
-        //         //                 runner.label = "!Windows"
-        //         //                 runner.post = {
-        //         //                     junit 'reports/junit-*.xml'
-        //         //                 }
-        //         //                 runner.run()
-        //         //             }
-        //         //         }
-        //         // )
-        //     }
-        // }
         stage("Additional tests") {
             when {
                 expression { params.ADDITIONAL_TESTS == true }
             }
-            // steps {
-                parallel{
-                    stage("MyPy"){
-                        agent{
-                            node {
-                                label "Windows && Python3"    
-                            }
-                        }
-                        steps{
-                            bat "${tool 'CPython-3.6'} -m venv venv"
-//                            bat "call make.bat install-dev"
-                            bat "venv\\Scripts\\pip.exe install mypy lxml"
-                            bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                            // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-
-                        }
-                        post{
-                            always {
-                                junit "junit-${env.NODE_NAME}-mypy.xml"
-                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                            }
+            parallel{
+                stage("MyPy"){
+                    agent{
+                        node {
+                            label "Windows && Python3"
                         }
                     }
-                    stage("Documentation"){
-                        agent{
-                            node {
-                                label "Windows && Python3"
-                            }
-                        }
-                        steps{
-                            bat "${tool 'CPython-3.6'} -m venv venv"
-                            bat "venv\\Scripts\\pip.exe install tox"
-                            bat "venv\\Scripts\\tox.exe -e docs"
-                        }
+                    steps{
+                        bat "${tool 'CPython-3.6'} -m venv venv"
+//                            bat "call make.bat install-dev"
+                        bat "venv\\Scripts\\pip.exe install mypy lxml"
+                        bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                        // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
 
+                    }
+                    post{
+                        always {
+                            junit "junit-${env.NODE_NAME}-mypy.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                        }
                     }
                 }
-                    // "MyPy": {
-                     
-                    //     node(label: "Windows") {
-                    //         checkout scm
-                    //         bat "call make.bat install-dev"
-                    //         bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                    //         // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                    //         junit "junit-${env.NODE_NAME}-mypy.xml"
-                    //         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                    //      }
-                    // },
-                        //     script {
-                        //         def runner = new Tox(this)
-                        //         runner.env = "mypy"
-                        //         runner.windows = true
-                        //         runner.stash = "Source"
-                        //         runner.label = "Windows"
-                        //         runner.post = {
-                        //             junit 'mypy.xml'
-                        //         }
-                        //         runner.run()
+                stage("Documentation"){
+                    agent{
+                        node {
+                            label "Windows && Python3"
+                        }
+                    }
+                    steps{
+                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        bat "venv\\Scripts\\pip.exe install tox"
+                        bat "venv\\Scripts\\tox.exe -e docs"
+                    }
 
-                        //     }
-                        // },
-                        // "Documentation": {
-                        //     bat "${tool 'CPython-3.6'} -m tox -e docs"
-                        //     // script {
-                        //     //     def runner = new Tox(this)
-                        //     //     runner.env = "docs"
-                        //     //     runner.windows = true
-                        //     //     runner.stash = "Source"
-                        //     //     runner.label = "Windows"
-                        //     //     runner.post = {
-                        //     //         dir('.tox/dist/html/') {
-                        //     //             stash includes: '**', name: "HTML Documentation", useDefaultExcludes: false
-                        //     //         }
-                        //     //     }
-                        //     //     runner.run()
-
-                        //     // }
-                        // }
-                // )
-            // }
+                }
+            }
         }
-
         stage("Packaging") {
             when {
                 expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
@@ -250,9 +133,14 @@ pipeline {
                                 pip install -r requirements-dev.txt
                                 python setup.py sdist bdist_wheel
                                 """
-                        dir("dist"){
-                            archiveArtifacts artifacts: "*.whl", fingerprint: true
-                            archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+
+                    }
+                    post{
+                        success{
+                            dir("dist"){
+                                archiveArtifacts artifacts: "*.whl", fingerprint: true
+                                archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
+                            }
                         }
                     }
                 }
@@ -267,9 +155,14 @@ pipeline {
                             // checkout scm
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "make freeze"
-                        dir("dist") {
-                            stash includes: "*.msi", name: "msi"
-                            archiveArtifacts artifacts: "*.msi", fingerprint: true
+
+                    }
+                    post{
+                        success{
+                            dir("dist") {
+                                stash includes: "*.msi", name: "msi"
+                                archiveArtifacts artifacts: "*.msi", fingerprint: true
+                            }
                         }
                     }
                 }
