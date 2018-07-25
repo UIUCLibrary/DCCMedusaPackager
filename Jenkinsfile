@@ -188,13 +188,30 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-        stage("Building"){
+        stage("Building docs"){
             steps{
                 echo "Building docs on ${env.NODE_NAME}"
                 tee("logs/build_sphinx.log") {
                     dir("build/lib"){
                         bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
                     }
+                }
+            }
+            post{
+                always {
+                    dir("logs"){
+                        script{
+                            def log_files = findFiles glob: '**/*.log'
+                            log_files.each { log_file ->
+                                echo "Found ${log_file}"
+                                archiveArtifacts artifacts: "${log_file}"
+                                bat "del ${log_file}"
+                            }
+                        }
+                    }
+                }
+                success{
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                 }
             }
         }
