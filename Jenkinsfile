@@ -676,7 +676,7 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
-            bat "dir"
+            bat "dir /s"
         }
     }
 }
