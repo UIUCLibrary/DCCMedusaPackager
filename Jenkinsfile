@@ -591,7 +591,7 @@ junit_filename                  = ${junit_filename}
                     dir("source"){
                         try{
                             retry(3) {
-                                bat "venv\\Scripts\\python.exe setup.py clean --all"
+                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
                             }
                         } catch (Exception ex) {
                             echo "Unable to successfully run clean. Purging source directory."
