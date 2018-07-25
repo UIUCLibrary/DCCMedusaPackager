@@ -301,7 +301,6 @@ junit_filename                  = ${junit_filename}
                         skipDefaultCheckout()
                     }
                     steps{
-                        deleteDir()
                         bat "dir"
                         checkout scm
                         bat "dir /s"
