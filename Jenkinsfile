@@ -28,16 +28,34 @@ pipeline {
     }
 
     stages {
-        stage("Cloning Source") {
-            agent any
+        stage("Configure") {
+            stages{
+                stage("Cloning Source") {
+                    agent any
+                    steps {
+                        deleteDir()
+                        echo "Cloning source"
+                        checkout scm
+                        stash includes: '**', name: "Source"
+                        stash includes: 'deployment.yml', name: "Deployment"
 
-            steps {
-                deleteDir()
-                echo "Cloning source"
-                checkout scm
-                stash includes: '**', name: "Source"
-                stash includes: 'deployment.yml', name: "Deployment"
-
+                    }
+                }
+                stage("Creating virtualenv for building"){
+                    steps{
+                        script {
+                            try {
+                                bat "call venv\\Scripts\\python.exe -m pip install -U pip"
+                            }
+                            catch (exc) {
+                                bat "${tool 'CPython-3.6'} -m venv venv"
+                                bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+                            }                           
+                        }    
+                        bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install tox --upgrade-strategy only-if-needed"
+                    }
+                }
             }
         }
         stage("Unit tests") {
@@ -141,7 +159,7 @@ pipeline {
                     }
                     stage("Documentation"){
                         steps{
-                            bat "${tool 'CPython-3.6'} -m tox -e docs"
+                            bat "venv\\Scripts\\tox.exe -e docs"
                         }
 
                     }
