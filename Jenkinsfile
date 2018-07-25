@@ -49,8 +49,11 @@ pipeline {
                             stash includes: '**', name: "Source"
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
-
-
+                    }
+                    post{
+                        success {
+                            bat "dir /s"
+                        }
                     }
                 }
                 stage("Cleanup extra dirs"){
