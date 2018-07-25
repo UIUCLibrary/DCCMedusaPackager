@@ -25,6 +25,7 @@ pipeline {
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
     parameters {
+        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
@@ -39,20 +40,29 @@ pipeline {
     stages {
         stage("Configure") {
             stages{
-                stage("Cloning Source") {
+                stage("Purge all existing data in workspace"){
+                    when{
+                        equals expected: true, actual: params.FRESH_WORKSPACE
+                    }
                     steps {
                         deleteDir()
                         bat "dir"
                         echo "Cloning source"
                         dir("source"){
                             checkout scm
-                            stash includes: '**', name: "Source"
-                            stash includes: 'deployment.yml', name: "Deployment"
                         }
                     }
                     post{
                         success {
                             bat "dir /s"
+                        }
+                    }
+                }
+                stage("stashing inportant files for later"){
+                    steps{
+                        dir("source"){
+                            stash includes: '**', name: "Source"
+                            stash includes: 'deployment.yml', name: "Deployment"
                         }
                     }
                 }
