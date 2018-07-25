@@ -88,7 +88,7 @@ pipeline {
                             }                           
                         }    
                         bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest flake8 --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest pytest-cov flake8 --upgrade-strategy only-if-needed"
                         
                         tee("logs/pippackages_venv_${NODE_NAME}.log") {
                             bat "venv\\Scripts\\pip.exe list"
