@@ -54,7 +54,7 @@ pipeline {
                             }                           
                         }    
                         bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install tox mypy pytest flake8--upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install tox mypy pytest flake8 --upgrade-strategy only-if-needed"
                     }
                 }
             }
