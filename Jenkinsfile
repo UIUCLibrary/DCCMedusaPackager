@@ -221,51 +221,13 @@ junit_filename                  = ${junit_filename}
                 }
             }
         }
-        stage("Additional tests") {
-            when {
-                expression { params.ADDITIONAL_TESTS == true }
-            }
-            parallel{
-                stage("MyPy"){
-                    // agent{
-                    //     node {
-                    //         label "Windows && Python3"
-                    //     }
-                    // }
-                    steps{
-                        // bat "${tool 'CPython-3.6'} -m venv venv"
-//                            bat "call make.bat install-dev"
-                        // bat "venv\\Scripts\\pip.exe install mypy lxml"
-                        dir("source") {
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
-                        }
-                        
-                        // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+        stage("Tests") {
 
-                    }
-                    post{
-                        always {
-                            junit "junit-${env.NODE_NAME}-mypy.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                        }
-                    }
-                }
-                stage("Documentation"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v" 
-                        }
-                    }
-
-                }
-            }
-        }
-        stage("Unit tests") {
-            when {
-                expression { params.UNIT_TESTS == true }
-            }
             parallel {
                 stage("PyTest"){
+                    when {
+                        equals expected: true, actual: params.UNIT_TESTS
+                    }
                     steps{
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
@@ -279,8 +241,45 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                 }
+                stage("MyPy"){
+                    when{
+                        equals expected: true, actual: params.ADDITIONAL_TESTS
+                    }
+                    steps{
+                        dir("source") {
+                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+                        }
+                    }
+                    post{
+                        always {
+                            junit "junit-${env.NODE_NAME}-mypy.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                        }
+                    }
+                }
+                stage("Documentation"){
+                    when{
+                        equals expected: true, actual: params.ADDITIONAL_TESTS
+                    }
+                    steps{
+                        dir("source"){
+                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v"
+                        }
+                    }
+
+                }
             }
         }
+//        stage("Additional tests") {
+//
+//            when {
+//
+//            }
+//            parallel{
+//
+//            }
+//        }
+
         stage("Packaging") {
             when {
                 expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
