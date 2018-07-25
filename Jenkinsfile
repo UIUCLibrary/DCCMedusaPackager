@@ -63,7 +63,7 @@ pipeline {
                             }                           
                         }    
                         bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install tox mypy pytest flake8 --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest flake8 --upgrade-strategy only-if-needed"
                     }
                 }
                 stage("Setting variables used by the rest of the build"){
@@ -125,20 +125,19 @@ junit_filename                  = ${junit_filename}
             when {
                 expression { params.UNIT_TESTS == true }
             }
-            // steps {
-                parallel {
-                    stage("PyTest"){
-                        steps{
-                            bat "venv\\Scripts\\tox.exe -e pytest -- --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
-                        }
-                        post {
-                            always{
-                                junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                            }
+            parallel {
+                stage("PyTest"){
+                    steps{
+                        bat "venv\\Scripts\\pytest.exe --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                    }
+                    post {
+                        always{
+                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                         }
                     }
                 }
+            }
         }
         stage("Additional tests") {
             when {
@@ -146,15 +145,15 @@ junit_filename                  = ${junit_filename}
             }
             parallel{
                 stage("MyPy"){
-                    agent{
-                        node {
-                            label "Windows && Python3"
-                        }
-                    }
+                    // agent{
+                    //     node {
+                    //         label "Windows && Python3"
+                    //     }
+                    // }
                     steps{
-                        bat "${tool 'CPython-3.6'} -m venv venv"
+                        // bat "${tool 'CPython-3.6'} -m venv venv"
 //                            bat "call make.bat install-dev"
-                        bat "venv\\Scripts\\pip.exe install mypy lxml"
+                        // bat "venv\\Scripts\\pip.exe install mypy lxml"
                         bat "venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
                         // bat "${tool 'CPython-3.6'} -m mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
 
