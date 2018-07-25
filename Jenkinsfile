@@ -54,7 +54,7 @@ pipeline {
                     }
                     post{
                         success {
-                            bat "dir /s"
+                            bat "dir /s /B"
                         }
                     }
                 }
@@ -162,7 +162,7 @@ pipeline {
             }
             post{
                 always{
-                    bat "dir /s"
+                    bat "dir /s / B"
                     echo """Name                            = ${PKG_NAME}
 Version                         = ${PKG_VERSION}
 Report Directory                = ${REPORT_DIR}
@@ -315,7 +315,7 @@ junit_filename                  = ${junit_filename}
                         deleteDir()
                         bat "dir"
                         checkout scm
-                        bat "dir /s"
+                        bat "dir /s / B"
                         bat "${tool 'CPython-3.6'} -m venv venv"
                         bat "make freeze"
 
@@ -555,7 +555,7 @@ junit_filename                  = ${junit_filename}
             }
             steps {
                 dir("build/docs/html/"){
-                    bat "dir /s"
+                    bat "dir /s /B"
                     sshPublisher(
                         publishers: [
                             sshPublisherDesc(
@@ -610,7 +610,7 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
-//            bat "dir /s"
+//            bat "dir /s / B"
         }
     }
 }
