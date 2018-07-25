@@ -253,19 +253,10 @@ junit_filename                  = ${junit_filename}
                     }
                 }
                 stage("Documentation"){
-                    // agent{
-                    //     node {
-                    //         label "Windows && Python3"
-                    //     }
-                    // }
                     steps{
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v" 
                         }
-                        
-                        // bat "${tool 'CPython-3.6'} -m venv venv"
-                        // bat "venv\\Scripts\\pip.exe install tox"
-                        // bat "venv\\Scripts\\tox.exe -e docs"
                     }
 
                 }
@@ -275,7 +266,6 @@ junit_filename                  = ${junit_filename}
             when {
                 expression { params.DEPLOY_DEVPI == true || params.RELEASE != "None"}
             }
-            // steps {
             parallel {
                 stage("Source and Wheel formats"){
                     steps{
@@ -283,12 +273,6 @@ junit_filename                  = ${junit_filename}
                             bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                         }
                         
-                        // bat """call ${WORKSPACE}\\venv\\Scripts\\activate.bat
-                        //        pip install -r requirements.txt
-                        //        pip install -r requirements-dev.txt
-                        //        python setup.py sdist bdist_wheel
-                        //         """
-
                     }
                     post{
                         success{
@@ -326,77 +310,13 @@ junit_filename                  = ${junit_filename}
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
+                        cleanup{
+                            bat "dir"
+                            deleteDir()
+                            bat "dir"
+                        }
                     }
                 }
-                // parallel(
-                    // "Source and Wheel formats": {
-                    //     bat """${tool 'CPython-3.6'} -m venv venv
-                    //             call venv\\Scripts\\activate.bat
-                    //             pip install -r requirements.txt
-                    //             pip install -r requirements-dev.txt
-                    //             python setup.py sdist bdist_wheel
-                    //             """
-                    //     dir("dist"){
-                    //         archiveArtifacts artifacts: "*.whl", fingerprint: true
-                    //         archiveArtifacts artifacts: "*.tar.gz", fingerprint: true
-                    //     }
-                    // },
-                    // "Windows CX_Freeze MSI": {
-                    //     node(label: "Windows") {
-                    //         deleteDir()
-                    //         checkout scm
-                    //         bat "${tool 'CPython-3.6'} -m venv venv"
-                    //         bat "make freeze"
-                    //         dir("dist") {
-                    //             stash includes: "*.msi", name: "msi"
-                    //             archiveArtifacts artifacts: "*.msi", fingerprint: true
-                    //         }
-
-                    //     }
-                    //     node(label: "Windows") {
-                    //         deleteDir()
-                    //         git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
-                    //         unstash "msi"
-                    //         bat "call validate.bat -i"
-                            
-                    //     }
-                    // },
-                    //     "Source Package": {
-                    //         createSourceRelease(env.PYTHON3, "Source")
-                    //     },
-                    //     "Python Wheel:": {
-                    //         node(label: "Windows") {
-                    //             deleteDir()
-                    //             unstash "Source"
-                    //             withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                    //                 bat """
-                    //   ${env.PYTHON3} -m venv .env
-                    //   call .env/Scripts/activate.bat
-                    //   pip install -r requirements.txt
-                    //   python setup.py bdist_wheel
-                    // """
-                    //                 dir("dist") {
-                    //                     archiveArtifacts artifacts: "*.whl", fingerprint: true
-                    //                 }
-                    //             }
-                    //         }
-                    //     },
-                        // "Python CX_Freeze Windows": {
-                        //     node(label: "Windows") {
-                        //         deleteDir()
-                        //         unstash "Source"
-                        //         withEnv(["PATH=${env.PYTHON3}/..:${env.PATH}"]) {
-                        //             bat """
-                        //                 ${env.PYTHON3} cx_setup.py bdist_msi --add-to-path=true
-                        //                 """
-                        //             dir("dist") {
-                        //                 archiveArtifacts artifacts: "*.msi", fingerprint: true
-                        //                 stash includes: "*.msi", name: "msi"
-                        //             }
-                        //         }
-                        //     }
-                        // }
-                // )
             }
         }
 
@@ -410,9 +330,6 @@ junit_filename                  = ${junit_filename}
                     }
                 }
             }
-            // when {
-            //     expression { params.DEPLOY_DEVPI == true }
-            // }
             steps {
                 bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu"
                 withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
@@ -520,52 +437,7 @@ junit_filename                  = ${junit_filename}
                     }
                 }
             }
-            // parallel(
-            //         "Source": {
-            //             script {
-            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-            //                 node("Windows") {
-            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-            //                         echo "Testing Source package in devpi"
-            //                         script {
-            //                              def devpi_test = bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s tar.gz").trim()
-            //                              if(devpi_test =~ 'tox command failed') {
-            //                                 error("Tox command failed")
-            //                             }
-            //                         }
-            //                     }
-            //                 }
 
-            //             }
-            //         },
-            //         "Wheel": {
-            //             script {
-            //                 def name = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --name").trim()
-            //                 def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
-            //                 node("Windows") {
-            //                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-            //                         bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-            //                         bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-            //                         echo "Testing Whl package in devpi"
-            //                         script {
-            //                             def devpi_test =  bat(returnStdout: true, script: "${tool 'CPython-3.6'} -m devpi test --index http://devpy.library.illinois.edu/${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging ${name} -s whl").trim()
-            //                             if(devpi_test =~ 'tox command failed') {
-            //                                 error("Tox command failed")
-            //                             }
-
-            //                         }
-
-            //                     }
-            //                 }
-
-            //             }
-            //         }
-            // )
-
-//            }
             post {
                 success {
                     echo "it Worked. Pushing file to ${env.BRANCH_NAME} index"
