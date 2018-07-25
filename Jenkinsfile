@@ -61,7 +61,6 @@ pipeline {
                 stage("Stashing important files for later"){
                     steps{
                         dir("source"){
-                            stash includes: '**', name: "Source"
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
                     }
