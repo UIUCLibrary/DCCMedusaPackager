@@ -40,9 +40,9 @@ pipeline {
         stage("Configure") {
             stages{
                 stage("Cloning Source") {
-                    agent any
                     steps {
                         deleteDir()
+                        bat "dir"
                         echo "Cloning source"
                         dir("source"){
                             checkout scm
