@@ -193,7 +193,7 @@ junit_filename                  = ${junit_filename}
                 echo "Building docs on ${env.NODE_NAME}"
                 tee("logs/build_sphinx.log") {
                     dir("build/lib"){
-                        bat "${WORKSPACE}\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+                        bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
                     }
                 }
             }
