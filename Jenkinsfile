@@ -273,8 +273,12 @@ junit_filename                  = ${junit_filename}
                     steps{
                             // deleteDir()
                             // checkout scm
+                        bat "dir /s"
                         bat "${tool 'CPython-3.6'} -m venv venv"
-                        bat "make freeze"
+                        dir("source"){
+                            bat "make freeze"
+                        }
+
 
                     }
                     post{
