@@ -169,7 +169,14 @@ pipeline {
                         }
                     }
                     stage("Documentation"){
+                        agent{
+                            node {
+                                label "Windows && Python3"
+                            }
+                        }
                         steps{
+                            bat "${tool 'CPython-3.6'} -m venv venv"
+                            bat "venv\\Scripts\\pip.exe install tox"
                             bat "venv\\Scripts\\tox.exe -e docs"
                         }
 
