@@ -193,7 +193,7 @@ junit_filename                  = ${junit_filename}
                 echo "Building docs on ${env.NODE_NAME}"
                 tee("logs/build_sphinx.log") {
                     dir("build/lib"){
-                        bat "venv\\Scripts\\sphinx-build -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+                        bat "${WORKSPACE}\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
                     }
                 }
             }
@@ -623,9 +623,9 @@ junit_filename                  = ${junit_filename}
                     def version = bat(returnStdout: true, script: "@${tool 'CPython-3.6'} setup.py --version").trim()
                     input("Are you sure you want to push ${name} version ${version} to production? This version cannot be overwritten.")
                     withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                        bat "${tool 'CPython-3.6'} -m devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                        bat "${tool 'CPython-3.6'} -m devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                        bat "${tool 'CPython-3.6'} -m devpi push ${name}==${version} production/release"
+                        bat "${WORKSPACE}\\venv\\Script\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+                        bat "${WORKSPACE}\\venv\\Script\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+                        bat "${WORKSPACE}\\venv\\Script\\devpi.exe push ${name}==${version} production/release"
                     }
 
                 }
