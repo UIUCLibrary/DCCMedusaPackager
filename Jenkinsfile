@@ -271,7 +271,7 @@ junit_filename                  = ${junit_filename}
                         }
                     }
                     options {
-                        skipDefaultCheckout(true)
+                        skipDefaultCheckout()
                     }
                     steps{
                         deleteDir()
