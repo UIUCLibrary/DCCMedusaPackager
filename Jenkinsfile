@@ -50,6 +50,15 @@ pipeline {
 
                     }
                 }
+                stage("Cleanup extra dirs"){
+                    steps{
+                        dir("reports"){
+                            deleteDir()
+                            echo "Cleaned out reports directory"
+                            bat "dir"
+                        }
+                    }
+                }
                 stage("Creating virtualenv for building"){
                     steps{
                         bat "${tool 'CPython-3.6'} -m venv venv"
