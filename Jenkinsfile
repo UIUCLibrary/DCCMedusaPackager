@@ -24,6 +24,9 @@ pipeline {
         mypy_args = "--junit-xml=mypy.xml"
         // pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
     }
+    triggers {
+        cron('@daily')
+    }
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
