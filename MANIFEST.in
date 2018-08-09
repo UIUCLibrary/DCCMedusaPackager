@@ -4,4 +4,6 @@ include tox.ini
 include pytest.ini
 recursive-include tests *.py
 recursive-include docs/source *
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
 prune docs/build
