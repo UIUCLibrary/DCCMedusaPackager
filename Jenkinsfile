@@ -85,6 +85,11 @@ pipeline {
                             echo "Cleaned out build directory"
                             bat "dir"
                         }
+                        dir("logs"){
+                            deleteDir()
+                            echo "Cleaned out logs directory"
+                            bat "dir"
+                        }
                     }
                 }
                 stage("Creating virtualenv for building"){
@@ -97,30 +102,17 @@ pipeline {
                             catch (exc) {
                                 bat "${tool 'CPython-3.6'} -m venv venv"
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }                           
-                        }    
-                        bat "venv\\Scripts\\pip.exe install devpi-client --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install tox mypy lxml pytest pytest-cov flake8 sphinx wheel --upgrade-strategy only-if-needed"
-                        
-                        tee("logs/pippackages_venv_${NODE_NAME}.log") {
-                            bat "venv\\Scripts\\pip.exe list"
-                        }
-                    }
-                    post{
-                        always{
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/pippackages_venv_*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
                             }
                         }
-                        failure {
-                            deleteDir()
+                        bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                        TODO: when detox is fixed, just use the most recent version
+                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml flake8 sphinx wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
+                    }
+                    post{
+                        success{
+                            bat "venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
+                            archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
                         }
                     }
                 }
@@ -180,50 +172,95 @@ junit_filename                  = ${junit_filename}
                 
             }
         }
-        stage("Build"){
+//        stage("Build"){
+        stage("Building") {
             stages{
-                stage("Python Package"){
+                stage("Building Python Package"){
                     steps {
-                        tee("logs/build.log") {
-                            dir("source"){
-                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build"
-                            }
 
+
+                        dir("source"){
+                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                        }
+
+                    }
+                    post{
+                        always{
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
+                            archiveArtifacts artifacts: "logs/build.log"
+                        }
+                        failure{
+                            echo "Failed to build Python package"
                         }
                     }
                 }
-                stage("Docs"){
-                    steps{
+                stage("Building Sphinx Documentation"){
+                    steps {
                         echo "Building docs on ${env.NODE_NAME}"
-                        tee("logs/build_sphinx.log") {
-                            dir("build/lib"){
-                                bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
-                            }
+                        dir("source"){
+                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
                         }
                     }
                     post{
                         always {
-                            dir("logs"){
-                                script{
-                                    def log_files = findFiles glob: '**/*.log'
-                                    log_files.each { log_file ->
-                                        echo "Found ${log_file}"
-                                        archiveArtifacts artifacts: "${log_file}"
-                                        bat "del ${log_file}"
-                                    }
-                                }
-                            }
+                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
+                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            dir("${WORKSPACE}/dist"){
-                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
-                            }
+                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                            stash includes: 'build/docs/html/**', name: 'docs'
+                        }
+                        failure{
+                            echo "Failed to build Python package"
                         }
                     }
                 }
             }
         }
+//            stages{
+//                stage("Python Package"){
+//                    steps {
+//                        tee("logs/build.log") {
+//                            dir("source"){
+//                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build"
+//                            }
+//
+//                        }
+//                    }
+//                }
+//                stage("Docs"){
+//                    steps{
+//                        echo "Building docs on ${env.NODE_NAME}"
+//                        tee("logs/build_sphinx.log") {
+//                            dir("build/lib"){
+//                                bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b html ${WORKSPACE}\\source\\docs\\source ${WORKSPACE}\\build\\docs\\html -d ${WORKSPACE}\\build\\docs\\doctrees"
+//                            }
+//                        }
+//                    }
+//                    post{
+//                        always {
+//                            dir("logs"){
+//                                script{
+//                                    def log_files = findFiles glob: '**/*.log'
+//                                    log_files.each { log_file ->
+//                                        echo "Found ${log_file}"
+//                                        archiveArtifacts artifacts: "${log_file}"
+//                                        bat "del ${log_file}"
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        success{
+//                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+//                            dir("${WORKSPACE}/dist"){
+//                                zip archive: true, dir: "${WORKSPACE}/build/docs/html", glob: '', zipFile: "${DOC_ZIP_FILENAME}"
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
         stage("Tests") {
 
             parallel {
