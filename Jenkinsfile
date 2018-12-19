@@ -606,6 +606,12 @@ junit_filename                  = ${junit_filename}
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
+            cleanWs deleteDirs: true, patterns: [
+                    [pattern: 'build*', type: 'INCLUDE'],
+                    [pattern: 'dist*', type: 'INCLUDE'],
+                    [pattern: 'logs*', type: 'INCLUDE'],
+                    [pattern: 'reports*', type: 'INCLUDE']
+                    ]
 //            bat "dir /s / B"
         }
     }
