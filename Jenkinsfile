@@ -136,14 +136,14 @@ pipeline {
                             // Set up the reports directory variable 
                            dir("source"){
 
-                                PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+//                                PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
 //                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                            }
                         }
 
                         script{
-                            DOC_ZIP_FILENAME = "${PKG_NAME}-${PKG_VERSION}.doc.zip"
+                            DOC_ZIP_FILENAME = "${env.pkg_name}-${PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
 
@@ -158,7 +158,7 @@ pipeline {
             }
             post{
                 always{
-                    echo """Name                            = ${PKG_NAME}
+                    echo """Name                            = ${env.pkg_name}
 Version                         = ${PKG_VERSION}
 documentation zip file          = ${DOC_ZIP_FILENAME}
 junit_filename                  = ${junit_filename}
@@ -380,7 +380,7 @@ junit_filename                  = ${junit_filename}
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
 
                         script {
-                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s tar.gz  --verbose"
+                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${env.pkg_name} -s tar.gz  --verbose"
                             if(devpi_test_return_code != 0){
                                 error "Devpi exit code for tar.gz was ${devpi_test_return_code}"
                             }
@@ -402,7 +402,7 @@ junit_filename                  = ${junit_filename}
                         }
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                         script {
-                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${PKG_NAME} -s zip --verbose"
+                            def devpi_test_return_code = bat returnStatus: true, script: "venv\\Scripts\\devpi.exe test --index https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging ${env.pkg_name} -s zip --verbose"
                             if(devpi_test_return_code != 0){
                                 error "Devpi exit code for zip was ${devpi_test_return_code}"
                             }
@@ -455,7 +455,7 @@ junit_filename                  = ${junit_filename}
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                             bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                            bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+                            bat "venv\\Scripts\\devpi.exe push ${env.pkg_name}==${PKG_VERSION} ${DEVPI_USERNAME}/${env.BRANCH_NAME}"
                         }
                     }
                 }
@@ -527,14 +527,14 @@ junit_filename                  = ${junit_filename}
                 script {
                     try{
                         timeout(30) {
-                            input "Release ${PKG_NAME} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${PKG_NAME}/${PKG_VERSION}) to DevPi Production? "
+                            input "Release ${env.pkg_name} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${env.pkg_name}/${PKG_VERSION}) to DevPi Production? "
                         }
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
                         }
 
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                        bat "venv\\Scripts\\devpi.exe push ${PKG_NAME}==${PKG_VERSION} production/release"
+                        bat "venv\\Scripts\\devpi.exe push ${env.pkg_name}==${PKG_VERSION} production/release"
                     } catch(err){
                         echo "User response timed out. Packages not deployed to DevPi Production."
                     }
@@ -604,7 +604,7 @@ junit_filename                  = ${junit_filename}
                         bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                     }
 
-                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${PKG_NAME}==${PKG_VERSION}"
+                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.pkg_name}==${PKG_VERSION}"
                     echo "Devpi remove exited with code ${devpi_remove_return_code}."
                 }
             }
