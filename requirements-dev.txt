@@ -3,5 +3,5 @@ pytest
 mypy
 pytest-cov
 wheel
-sphinx
+sphinx==1.6.7
 lxml
