@@ -7,6 +7,14 @@ def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
+def get_pkg_name(pythonHomePath){
+    script{
+
+        def pkg_name = bat(returnStdout: true, script: "${pythonHomePath}\\python  setup.py --name").trim()
+        return pkg_name
+    }
+
+}
 pipeline {
     agent {
         label "Windows"
@@ -121,7 +129,9 @@ pipeline {
                         script {
                             // Set up the reports directory variable 
                            dir("source"){
-                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
+
+                                PKG_NAME = get_pkg_name("${tool 'CPython-3.6'}")
+//                                PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
                            }
                         }
