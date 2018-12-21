@@ -78,7 +78,6 @@ pipeline {
                 }
                 stage("Stashing important files for later"){
                     steps{
-                        bat "set"
                         dir("source"){
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
@@ -261,11 +260,11 @@ junit_filename                  = ${junit_filename}
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v > ${WORKSPACE}/logs/doctest.log"
                         }
-                        bat "move ${WORKSPACE}\\build\\docs\\html\\doctest\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
+//                        bat "move ${WORKSPACE}\\build\\docs\\html\\doctest\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
                     }
                     post{
                         always {
-                            archiveArtifacts artifacts: "reports/doctest.txt"
+//                            archiveArtifacts artifacts: "reports/doctest.txt"
                             recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
 
                         }
