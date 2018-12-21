@@ -259,7 +259,15 @@ junit_filename                  = ${junit_filename}
                     }
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v"
+                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v > ${WORKSPACE}/logs/doctest.log"
+                        }
+                        bat "move ${WORKSPACE}\\build\\docs\\html\\doctest\\output.txt ${WORKSPACE}\\reports\\doctest.txt"
+                    }
+                    post{
+                        always {
+                            archiveArtifacts artifacts: "reports/doctest.txt"
+                            recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
+
                         }
                     }
 
