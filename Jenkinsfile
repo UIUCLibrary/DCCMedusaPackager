@@ -451,6 +451,11 @@ junit_filename                  = ${junit_filename}
                                     }
 
                             }
+                            post{
+                                cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
+                                }
+                            }
                         }
 
                         stage("Built Distribution: .whl") {
@@ -490,6 +495,9 @@ junit_filename                  = ${junit_filename}
                             post{
                                 failure{
                                     cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
+                                }
+                               cleanup{
+                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
                                 }
                             }
                         }
