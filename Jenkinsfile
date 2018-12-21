@@ -9,6 +9,7 @@ def junit_filename = "junit.xml"
 
 def get_pkg_name(pythonHomePath){
     node("Python3"){
+        bat "dir"
         script{
             def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
             return pkg_name
