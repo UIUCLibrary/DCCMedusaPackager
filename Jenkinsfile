@@ -488,6 +488,7 @@ junit_filename                  = ${junit_filename}
                     deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                     input("Push a SCCM release?")
                     deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                    deleteDir()
                 }
 
             }
@@ -527,7 +528,7 @@ junit_filename                  = ${junit_filename}
         stage("Update online documentation") {
             agent any
             when {
-                expression { params.UPDATE_DOCS == true }
+                equals expected: true, actual: params.UPDATE_DOCS
             }
             steps {
                 dir("build/docs/html/"){
@@ -556,6 +557,11 @@ junit_filename                  = ${junit_filename}
                     )
                 }
                 // updateOnlineDocs stash_name: "HTML Documentation", url_subdomain: params.URL_SUBFOLDER
+            }
+            post{
+                cleanup{
+                    deleteDir()
+                }
             }
         }
     }
