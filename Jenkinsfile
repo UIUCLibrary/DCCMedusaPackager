@@ -13,6 +13,7 @@ def get_pkg_name(pythonHomePath){
         bat "dir"
         script{
             def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
+            deleteDir()
             return pkg_name
         }
     }
@@ -74,6 +75,7 @@ pipeline {
                 }
                 stage("Stashing important files for later"){
                     steps{
+                        bat "set"
                         dir("source"){
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
