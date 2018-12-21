@@ -121,7 +121,7 @@ pipeline {
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
 //                        TODO: when detox is fixed, just use the most recent version
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml flake8 sphinx wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
                     }
                     post{
