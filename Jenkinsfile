@@ -6,10 +6,6 @@ def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
-def REPORT_DIR = ""
-def VENV_ROOT = ""
-def VENV_PYTHON = ""
-def VENV_PIP = ""
 
 pipeline {
     agent {
@@ -124,7 +120,6 @@ pipeline {
                         
                         script {
                             // Set up the reports directory variable 
-                            REPORT_DIR = "${pwd tmp: true}\\reports"
                            dir("source"){
                                 PKG_NAME = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python  setup.py --name").trim()
                                 PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
@@ -137,19 +132,6 @@ pipeline {
                         }
 
 
-                        
-                        
-                        script{
-                            VENV_ROOT = "${WORKSPACE}\\venv\\"
-
-                            VENV_PYTHON = "${WORKSPACE}\\venv\\Scripts\\python.exe"
-                            bat "${VENV_PYTHON} --version"
-
-                            VENV_PIP = "${WORKSPACE}\\venv\\Scripts\\pip.exe"
-                            bat "${VENV_PIP} --version"
-                        }
-
-                        
                         bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
                         withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {    
                             bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
@@ -160,14 +142,9 @@ pipeline {
             }
             post{
                 always{
-                    bat "dir /s / B"
                     echo """Name                            = ${PKG_NAME}
 Version                         = ${PKG_VERSION}
-Report Directory                = ${REPORT_DIR}
 documentation zip file          = ${DOC_ZIP_FILENAME}
-Python virtual environment path = ${VENV_ROOT}
-VirtualEnv Python executable    = ${VENV_PYTHON}
-VirtualEnv Pip executable       = ${VENV_PIP}
 junit_filename                  = ${junit_filename}
 """           
 
