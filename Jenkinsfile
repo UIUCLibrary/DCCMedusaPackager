@@ -2,6 +2,8 @@
 @Library("ds-utils")
 import org.ds.*
 
+@Library("devpi") _
+
 def PKG_NAME = "unknown"
 def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
