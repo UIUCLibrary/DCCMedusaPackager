@@ -23,7 +23,7 @@ def get_pkg_name(pythonHomePath){
 
 pipeline {
     agent {
-        label "Windows"
+        label "Windows && Python3"
     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
@@ -45,7 +45,8 @@ pipeline {
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
-        choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
+        booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
+//        choice(choices: 'None\nRelease_to_devpi_only\nRelease_to_devpi_and_sccm\n', description: "Release the build to production. Only available in the Master branch", name: 'RELEASE')
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
         // booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a Packages")
@@ -400,6 +401,7 @@ junit_filename                  = ${junit_filename}
 
                 stage("Deploy to Devpi Staging") {
 
+
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
@@ -656,7 +658,7 @@ junit_filename                  = ${junit_filename}
         // }
         stage("Deploy to SCCM") {
             when {
-                expression { params.RELEASE == "Release_to_devpi_and_sccm"}
+                equals expected: true, actual: params.DEPLOY_SCCM
             }
 
             steps {
