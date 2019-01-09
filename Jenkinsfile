@@ -347,34 +347,34 @@ junit_filename                  = ${junit_filename}
             }
         }
 
-        stage("Deploying to DevPi") {
-            when {
-                allOf{
-                    equals expected: true, actual: params.DEPLOY_DEVPI
-                    anyOf {
-                        equals expected: "master", actual: env.BRANCH_NAME
-                        equals expected: "dev", actual: env.BRANCH_NAME
-                    }
-                }
-            }
-            steps {
-                bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu"
-                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
-                    script {
-                        bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
-                        try {
-//                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
-                            bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
-                        } catch (exc) {
-                            echo "Unable to upload to devpi with docs."
-                        }
-                    }
-                }
-
-            }
-        }
+//        stage("Deploying to DevPi") {
+//            when {
+//                allOf{
+//                    equals expected: true, actual: params.DEPLOY_DEVPI
+//                    anyOf {
+//                        equals expected: "master", actual: env.BRANCH_NAME
+//                        equals expected: "dev", actual: env.BRANCH_NAME
+//                    }
+//                }
+//            }
+//            steps {
+//                bat "venv\\Scripts\\devpi.exe use http://devpy.library.illinois.edu"
+//                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                    bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                    bat "venv\\Scripts\\devpi.exe use /${DEVPI_USERNAME}/${env.BRANCH_NAME}_staging"
+//                    script {
+//                        bat "venv\\Scripts\\devpi.exe upload --from-dir dist"
+//                        try {
+////                            bat "venv\\Scripts\\devpi.exe upload --only-docs"
+//                            bat "venv\\Scripts\\devpi.exe upload --only-docs ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+//                        } catch (exc) {
+//                            echo "Unable to upload to devpi with docs."
+//                        }
+//                    }
+//                }
+//
+//            }
+//        }
         stage("Deploy to Devpi"){
             when {
                 allOf{
@@ -388,11 +388,11 @@ junit_filename                  = ${junit_filename}
                     }
                 }
             }
-            environment{
-                TMPDIR = "${WORKSPACE}\\tmp"
-                TMP = "${WORKSPACE}\\tmp"
-                TEMP = "${WORKSPACE}\\tmp"
-            }
+//            environment{
+//                TMPDIR = "${WORKSPACE}\\tmp"
+//                TMP = "${WORKSPACE}\\tmp"
+//                TEMP = "${WORKSPACE}\\tmp"
+//            }
             options{
                 timestamps()
                 }
