@@ -347,7 +347,7 @@ junit_filename                  = ${junit_filename}
             }
         }
 
-        stage("Deploying to Devpi") {
+        stage("Deploying to DevPi") {
             when {
                 allOf{
                     equals expected: true, actual: params.DEPLOY_DEVPI
