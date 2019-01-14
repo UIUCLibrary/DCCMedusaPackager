@@ -44,6 +44,7 @@ pipeline {
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
@@ -493,7 +494,11 @@ junit_filename                  = ${junit_filename}
         }
         stage("Release to DevPi production") {
             when {
-                expression { params.RELEASE != "None" && env.BRANCH_NAME == "master" }
+                allOf{
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    branch "master"
+                }
             }
             steps {
                 script {
