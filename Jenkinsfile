@@ -117,9 +117,8 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-//                        TODO: when detox is fixed, just use the most recent version
                         bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install detox==0.13 tox==3.2.1"
+                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
                         success{
@@ -385,7 +384,7 @@ junit_filename                  = ${junit_filename}
                                         bat "${tool 'CPython-3.6'}\\python -m venv venv"
                                     }
 
-                                    bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                                    bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                                     lock("${BUILD_TAG}_${NODE_NAME}"){
                                         timeout(10){
                                             bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
@@ -428,7 +427,7 @@ junit_filename                  = ${junit_filename}
                                 lock("system_python_${NODE_NAME}"){
                                     bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
                                 }
-                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox detox devpi-client"
+                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
                                 lock("${BUILD_TAG}_${NODE_NAME}"){
                                     timeout(10){
                                         devpiTest(
