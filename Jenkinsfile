@@ -580,7 +580,9 @@ junit_filename                  = ${junit_filename}
                 }
             }
             cleanWs deleteDirs: true, patterns: [
+                    [pattern: 'certs', type: 'INCLUDE'],
                     [pattern: 'build*', type: 'INCLUDE'],
+                    [pattern: '*tmp', type: 'INCLUDE'],
                     [pattern: 'dist*', type: 'INCLUDE'],
                     [pattern: 'logs*', type: 'INCLUDE'],
                     [pattern: 'reports*', type: 'INCLUDE']
