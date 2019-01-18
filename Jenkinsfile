@@ -244,7 +244,7 @@ pipeline {
                 stage("Source and Wheel formats"){
                     steps{
                         dir("source"){
-                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
                         }
                         
                     }
@@ -342,7 +342,7 @@ pipeline {
                 }
                 stage("Test DevPi packages") {
                     parallel {
-                        stage("Source Distribution: .tar.gz") {
+                        stage("Source Distribution: .zip") {
                             agent {
                                 node {
                                     label "Windows && Python3"
@@ -367,7 +367,7 @@ pipeline {
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${env.pkg_name}",
                                                 pkgVersion: "${PKG_VERSION}",
-                                                pkgRegex: "tar.gz",
+                                                pkgRegex: "zip",
                                                 detox: false
                                             )
                                         }
