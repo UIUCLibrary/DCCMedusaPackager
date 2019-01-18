@@ -16,7 +16,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
 
     }
 }
-def junit_filename = "junit.xml"
 
 pipeline {
     agent {
