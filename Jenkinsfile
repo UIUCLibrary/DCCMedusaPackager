@@ -16,20 +16,7 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
 
     }
 }
-def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
-
-//def get_pkg_name(pythonHomePath){
-//    node("Python3"){
-//        checkout scm
-//        bat "dir"
-//        script{
-//            def pkg_name = bat(returnStdout: true, script: "@${pythonHomePath}\\python  setup.py --name").trim()
-//            deleteDir()
-//            return pkg_name
-//        }
-//    }
-//}
 
 pipeline {
     agent {
@@ -144,7 +131,6 @@ pipeline {
                 stage("Setting variables used by the rest of the build"){
                     steps{
                         script{
-                            DOC_ZIP_FILENAME = "${env.pkg_name}-${PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
                         }
 
@@ -161,7 +147,6 @@ pipeline {
                 always{
                     echo """Name                            = ${env.pkg_name}
 Version                         = ${PKG_VERSION}
-documentation zip file          = ${DOC_ZIP_FILENAME}
 junit_filename                  = ${junit_filename}
 """           
 
@@ -204,9 +189,9 @@ junit_filename                  = ${junit_filename}
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
 //                            stash includes: 'build/docs/html/**', name: 'docs'
-                            stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -363,7 +348,7 @@ junit_filename                  = ${junit_filename}
                             script {
                                 bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --from-dir ${WORKSPACE}\\dist"
                                 try {
-                                    bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${DOC_ZIP_FILENAME}"
+                                    bat "${WORKSPACE}\\venv\\Scripts\\python -m devpi upload --only-docs --from-dir ${WORKSPACE}\\dist\\${env.DOC_ZIP_FILENAME}"
                                 } catch (exc) {
                                     echo "Unable to upload to devpi with docs."
                                 }
