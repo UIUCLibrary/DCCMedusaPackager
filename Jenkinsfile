@@ -107,7 +107,7 @@ pipeline {
                 }
                 stage("Creating virtualenv for building"){
                     steps{
-                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
+                        bat "python -m venv venv"
                         script {
                             try {
                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
@@ -130,9 +130,6 @@ pipeline {
                 }
                 stage("Setting variables used by the rest of the build"){
                     steps{
-                        script{
-                            junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
-                        }
 
 
                         bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
@@ -142,16 +139,6 @@ pipeline {
                         bat "dir"
                     }
                 }
-            }
-            post{
-                always{
-                    echo """Name                            = ${env.pkg_name}
-Version                         = ${PKG_VERSION}
-junit_filename                  = ${junit_filename}
-"""           
-
-                }
-                
             }
         }
         stage("Building") {
