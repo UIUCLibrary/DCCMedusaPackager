@@ -391,9 +391,6 @@ pipeline {
                                 skipDefaultCheckout(true)
                             }
                             environment{
-                                TMPDIR = "${WORKSPACE}\\tmp"
-                                TMP = "${WORKSPACE}\\tmp"
-                                TEMP = "${WORKSPACE}\\tmp"
                                 TOX_WORK_DIR = "${WORKSPACE}\\tmp"
                             }
                             steps {
