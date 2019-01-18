@@ -16,8 +16,6 @@ def remove_from_devpi(devpiExecutable, pkgName, pkgVersion, devpiIndex, devpiUse
 
     }
 }
-def PKG_NAME = "unknown"
-def PKG_VERSION = "unknown"
 def DOC_ZIP_FILENAME = "doc.zip"
 def junit_filename = "junit.xml"
 
@@ -145,15 +143,6 @@ pipeline {
                 }
                 stage("Setting variables used by the rest of the build"){
                     steps{
-                        
-                        script {
-                            // Set up the reports directory variable 
-                           dir("source"){
-
-                                PKG_VERSION = bat(returnStdout: true, script: "@${tool 'CPython-3.6'}\\python setup.py --version").trim()
-                           }
-                        }
-
                         script{
                             DOC_ZIP_FILENAME = "${env.pkg_name}-${PKG_VERSION}.doc.zip"
                             junit_filename = "junit-${env.NODE_NAME}-${env.GIT_COMMIT.substring(0,7)}-pytest.xml"
