@@ -442,7 +442,7 @@ pipeline {
                                                 index: "${env.BRANCH_NAME}_staging",
                                                 pkgName: "${env.PKG_NAME}",
                                                 pkgVersion: "${env.PKG_VERSION}",
-                                                pkgRegex: "36.*whl",
+                                                pkgRegex: "whl",
                                                 detox: false,
                                                 toxEnvironment: "py36"
                                             )
