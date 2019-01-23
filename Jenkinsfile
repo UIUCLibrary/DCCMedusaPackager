@@ -326,14 +326,18 @@ pipeline {
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
             }
             stages{
-
+                stage("Installing DevPi Client"){
+                    steps{
+                        bat "pip install devpi-client"
+                    }
+                }
                 stage("Uploading to Package to DevPi Staging") {
 
 
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-                        bat "pip install devpi"
+
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
