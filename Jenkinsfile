@@ -296,11 +296,11 @@ pipeline {
                                 archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
                         }
-                        cleanup{
-                            bat "dir"
-                            deleteDir()
-                            bat "dir"
-                        }
+//                        cleanup{
+//                            bat "dir"
+//                            deleteDir()
+//                            bat "dir"
+//                        }
                     }
                 }
             }
@@ -559,11 +559,11 @@ pipeline {
                     )
                 }
             }
-            post{
-                cleanup{
-                    deleteDir()
-                }
-            }
+//            post{
+//                cleanup{
+//                    deleteDir()
+//                }
+//            }
         }
     }
     post{
