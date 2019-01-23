@@ -115,7 +115,7 @@ pipeline {
                             }
                         }
                         bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install devpi-client pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
+                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt --upgrade-strategy only-if-needed"
                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
                     }
                     post{
@@ -322,6 +322,7 @@ pipeline {
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
+                        bat "pip install devpi"
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
 //                        dir("source"){
 //                            bat "${WORKSPACE}\\venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
@@ -341,85 +342,204 @@ pipeline {
                 }
                 stage("Test DevPi packages") {
                     parallel {
-                        stage("Source Distribution: .zip") {
+//                        stage("Source Distribution: .zip") {
+//                            agent {
+//                                node {
+//                                    label "Windows && Python3"
+//                                }
+//                            }
+//                            options {
+//                                skipDefaultCheckout(true)
+//
+//                            }
+//                            steps {
+//                                    lock("system_python_${NODE_NAME}"){
+//                                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
+//                                    }
+//
+//                                    bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+//                                    lock("${BUILD_TAG}_${NODE_NAME}"){
+//                                        timeout(10){
+//                                            bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+//                                            devpiTest(
+//                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+//                                                url: "https://devpi.library.illinois.edu",
+//                                                index: "${env.BRANCH_NAME}_staging",
+//                                                pkgName: "${env.pkg_name}",
+//                                                pkgVersion: "${PKG_VERSION}",
+//                                                pkgRegex: "zip",
+//                                                detox: false
+//                                            )
+//                                        }
+//                                    }
+//
+//                            }
+//                            post{
+//                                cleanup{
+//                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
+//                                }
+//                            }
+//                        }
+                        stage("Testing DevPi .zip Package with Python 3.6"){
+                            environment {
+                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                            }
                             agent {
                                 node {
-                                    label "Windows && Python3"
+                                    label "Windows && Python3 && VS2015"
                                 }
                             }
                             options {
                                 skipDefaultCheckout(true)
 
                             }
-                            steps {
-                                    lock("system_python_${NODE_NAME}"){
-                                        bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                    }
+                            stages{
+                                stage("Creating venv to test sdist"){
+                                        steps {
+                                            lock("system_python_${NODE_NAME}"){
+                                                bat "python -m venv venv\\venv36"
+                                            }
+                                            bat "venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install tox devpi-client"
+//                                            bat "venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
+                                        }
 
-                                    bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-                                    lock("${BUILD_TAG}_${NODE_NAME}"){
+                                }
+                                stage("Testing DevPi zip Package"){
+
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\venv36\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                                    }
+                                    steps {
+                                        echo "Testing Source zip package in devpi"
+
                                         timeout(10){
-                                            bat "venv\\Scripts\\devpi.exe use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
                                             devpiTest(
-                                                devpiExecutable: "venv\\Scripts\\devpi.exe",
+                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
                                                 url: "https://devpi.library.illinois.edu",
                                                 index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${env.pkg_name}",
-                                                pkgVersion: "${PKG_VERSION}",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
                                                 pkgRegex: "zip",
                                                 detox: false
                                             )
                                         }
                                     }
-
-                            }
-                            post{
-                                cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
                                 }
                             }
-                        }
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
+                                }
+                            }
 
-                        stage("Built Distribution: .whl") {
+                        }
+                        stage("Testing DevPi .whl Package with Python 3.6"){
                             agent {
                                 node {
-                                    label "Windows && Python3"
+                                    label "Windows && Python3 && !Docker"
                                 }
                             }
+
                             options {
                                 skipDefaultCheckout(true)
                             }
-                            environment{
-                                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
-                            }
-                            steps {
-                                lock("system_python_${NODE_NAME}"){
-                                    bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
+                            stages{
+                                stage("Creating venv to Test py36 .whl"){
+                                    environment {
+                                        PATH = "${tool 'CPython-3.6'};$PATH"
+                                    }
+                                    steps {
+                                        lock("system_python_${NODE_NAME}"){
+                                            bat "(if not exist venv\\36 mkdir venv\\36) && python -m venv venv\\36"
+                                        }
+                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
+                                    }
+
                                 }
-                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
-                                lock("${BUILD_TAG}_${NODE_NAME}"){
-                                    timeout(10){
+                                stage("Testing DevPi .whl Package with Python 3.6"){
+                                    options{
+                                        timeout(10)
+                                    }
+                                    environment {
+                                        PATH = "${WORKSPACE}\\venv\\36\\Scripts;$PATH"
+                                    }
+
+                                    steps {
+
                                         devpiTest(
-                                            devpiExecutable: "venv\\Scripts\\devpi.exe",
-                                            url: "https://devpi.library.illinois.edu",
-                                            index: "${env.BRANCH_NAME}_staging",
-                                            pkgName: "${env.pkg_name}",
-                                            pkgVersion: "${PKG_VERSION}",
-                                            pkgRegex: "whl",
-                                            detox: false
-                                        )
+                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+                                                url: "https://devpi.library.illinois.edu",
+                                                index: "${env.BRANCH_NAME}_staging",
+                                                pkgName: "${env.PKG_NAME}",
+                                                pkgVersion: "${env.PKG_VERSION}",
+                                                pkgRegex: "36.*whl",
+                                                detox: false,
+                                                toxEnvironment: "py36"
+                                            )
+
                                     }
                                 }
                             }
-                            post{
-                                failure{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
-                                }
-                               cleanup{
-                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
+                            post {
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        disableDeferredWipeout: true,
+                                        patterns: [
+                                            [pattern: '*tmp', type: 'INCLUDE'],
+                                            [pattern: 'certs', type: 'INCLUDE']
+                                            ]
+                                    )
                                 }
                             }
                         }
+//                        stage("Built Distribution: .whl") {
+//                            agent {
+//                                node {
+//                                    label "Windows && Python3"
+//                                }
+//                            }
+//                            options {
+//                                skipDefaultCheckout(true)
+//                            }
+//                            environment{
+//                                TOX_WORK_DIR = "${WORKSPACE}\\tmp"
+//                            }
+//                            steps {
+//                                lock("system_python_${NODE_NAME}"){
+//                                    bat "${tool 'CPython-3.6'}\\python -m pip install pip --upgrade && ${tool 'CPython-3.6'}\\python -m venv venv "
+//                                }
+//                                bat "venv\\Scripts\\python.exe -m pip install pip --upgrade && venv\\Scripts\\pip.exe install setuptools --upgrade && venv\\Scripts\\pip.exe install tox devpi-client"
+//                                lock("${BUILD_TAG}_${NODE_NAME}"){
+//                                    timeout(10){
+//                                        devpiTest(
+//                                            devpiExecutable: "venv\\Scripts\\devpi.exe",
+//                                            url: "https://devpi.library.illinois.edu",
+//                                            index: "${env.BRANCH_NAME}_staging",
+//                                            pkgName: "${env.pkg_name}",
+//                                            pkgVersion: "${PKG_VERSION}",
+//                                            pkgRegex: "whl",
+//                                            detox: false
+//                                        )
+//                                    }
+//                                }
+//                            }
+//                            post{
+//                                failure{
+//                                    cleanWs deleteDirs: true, patterns: [[pattern: 'venv', type: 'INCLUDE']]
+//                                }
+//                               cleanup{
+//                                    cleanWs deleteDirs: true, patterns: [[pattern: 'certs', type: 'INCLUDE']]
+//                                }
+//                            }
+//                        }
                     }
 
                 }
