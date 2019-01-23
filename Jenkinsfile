@@ -293,8 +293,8 @@ pipeline {
                         success{
                             dir("dist") {
                                 stash includes: "*.msi", name: "msi"
-                                archiveArtifacts artifacts: "*.msi", fingerprint: true
                             }
+                            archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
 //                        cleanup{
 //                            bat "dir"
