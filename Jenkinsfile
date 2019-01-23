@@ -448,7 +448,7 @@ pipeline {
                         stage("Testing DevPi .whl Package with Python 3.6"){
                             agent {
                                 node {
-                                    label "Windows && Python3 && !Docker"
+                                    label "Windows && Python3"
                                 }
                             }
 
