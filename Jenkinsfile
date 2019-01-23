@@ -78,30 +78,6 @@ pipeline {
                         }
                     }
                 }
-//                stage("Cleanup extra dirs"){
-//                    steps{
-//                        dir("reports"){
-//                            deleteDir()
-//                            echo "Cleaned out reports directory"
-//                            bat "dir"
-//                        }
-//                        dir("dist"){
-//                            deleteDir()
-//                            echo "Cleaned out dist directory"
-//                            bat "dir"
-//                        }
-//                        dir("build"){
-//                            deleteDir()
-//                            echo "Cleaned out build directory"
-//                            bat "dir"
-//                        }
-//                        dir("logs"){
-//                            deleteDir()
-//                            echo "Cleaned out logs directory"
-//                            bat "dir"
-//                        }
-//                    }
-//                }
                 stage("Creating virtualenv for building"){
                     steps{
                         bat "python -m venv venv"
@@ -125,17 +101,6 @@ pipeline {
                         }
                     }
                 }
-//                stage("Setting variables used by the rest of the build"){
-//                    steps{
-//
-//
-//                        bat "venv\\Scripts\\devpi use https://devpi.library.illinois.edu"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                            bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-//                        }
-//                        bat "dir"
-//                    }
-//                }
             }
         }
         stage("Building") {
@@ -149,7 +114,6 @@ pipeline {
                     }
                     post{
                         always{
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build.log']]
                             archiveArtifacts artifacts: "logs/build.log"
                             recordIssues(tools: [
                                         pyLint(name: 'Setuptools Build: PyLint', pattern: 'logs/build.log'),
@@ -172,13 +136,11 @@ pipeline {
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log', id: 'sphinx_build')])
-//                            warnings canRunOnFailed: true, parserConfigurations: [[parserName: 'Pep8', pattern: 'logs/build_sphinx.log']]
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                             zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
-//                            stash includes: 'build/docs/html/**', name: 'docs'
                             stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                         }
                         failure{
@@ -261,11 +223,6 @@ pipeline {
                     }
                 }
                 stage("Windows CX_Freeze MSI"){
-//                    agent{
-//                        node {
-//                            label "Windows"
-//                        }
-//                    }
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_CX_FREEZE
@@ -275,17 +232,11 @@ pipeline {
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
                     }
-//                    options {
-//                        skipDefaultCheckout true
-//                    }
                     steps{
-//                        bat "python -m venv venv"
                         bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
-
                         dir("source"){
                             bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
                         }
-//                        bat "make freeze"
 
 
                     }
@@ -296,11 +247,6 @@ pipeline {
                             }
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                         }
-//                        cleanup{
-//                            bat "dir"
-//                            deleteDir()
-//                            bat "dir"
-//                        }
                     }
                 }
             }
@@ -363,7 +309,6 @@ pipeline {
                                                 bat "python -m venv venv\\venv36"
                                             }
                                             bat "venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install tox devpi-client"
-//                                            bat "venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install \"tox<3.7\" detox devpi-client"
                                         }
 
                                 }
@@ -494,10 +439,7 @@ pipeline {
                 success {
                     echo "pushing to ${env.BRANCH_NAME}_staging"
                     bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-//                        withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
                     bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
-
-//                        }
                 }
                 cleanup{
                     remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
@@ -563,11 +505,6 @@ pipeline {
                     )
                 }
             }
-//            post{
-//                cleanup{
-//                    deleteDir()
-//                }
-//            }
         }
     }
     post{
@@ -586,16 +523,6 @@ pipeline {
                         }
                     }
                 }
-                bat "dir"
-//                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
-//                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-//                        bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
-//                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-//                    }
-//
-//                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.pkg_name}==${PKG_VERSION}"
-//                    echo "Devpi remove exited with code ${devpi_remove_return_code}."
-//                }
             }
             cleanWs deleteDirs: true, patterns: [
                     [pattern: 'certs', type: 'INCLUDE'],
