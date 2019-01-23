@@ -255,11 +255,11 @@ pipeline {
                     }
                 }
                 stage("Windows CX_Freeze MSI"){
-                    agent{
-                        node {
-                            label "Windows"
-                        }
-                    }
+//                    agent{
+//                        node {
+//                            label "Windows"
+//                        }
+//                    }
                     when{
                         anyOf{
                             equals expected: true, actual: params.PACKAGE_CX_FREEZE
@@ -273,7 +273,7 @@ pipeline {
 //                        skipDefaultCheckout true
 //                    }
                     steps{
-                        bat "python -m venv venv"
+//                        bat "python -m venv venv"
                         bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
 
                         dir("source"){
