@@ -269,12 +269,17 @@ pipeline {
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
                     }
-                    options {
-                        skipDefaultCheckout true
-                    }
+//                    options {
+//                        skipDefaultCheckout true
+//                    }
                     steps{
                         bat "python -m venv venv"
-                        bat "make freeze"
+                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
+
+                        dir("source"){
+                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
+                        }
+//                        bat "make freeze"
 
 
                     }
