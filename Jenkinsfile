@@ -397,7 +397,7 @@ pipeline {
                             }
                             agent {
                                 node {
-                                    label "Windows && Python3 && VS2015"
+                                    label "Windows && Python3"
                                 }
                             }
                             options {
