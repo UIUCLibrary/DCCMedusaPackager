@@ -537,7 +537,11 @@ pipeline {
             when {
                 equals expected: true, actual: params.UPDATE_DOCS
             }
+            options {
+                skipDefaultCheckout(true)
+            }
             steps {
+                unstash 'DOCS_ARCHIVE'
                 dir("build/docs/html/"){
                     bat "dir /s /B"
                     sshPublisher(
@@ -564,11 +568,11 @@ pipeline {
                     )
                 }
             }
-//            post{
-//                cleanup{
-//                    deleteDir()
-//                }
-//            }
+            post{
+                cleanup{
+                    deleteDir()
+                }
+            }
         }
     }
     post{
