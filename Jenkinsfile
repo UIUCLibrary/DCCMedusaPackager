@@ -401,6 +401,7 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
+                                            [pattern: 'source', type: 'INCLUDE'],
                                             [pattern: '*tmp', type: 'INCLUDE'],
                                             [pattern: 'certs', type: 'INCLUDE']
                                             ]
@@ -478,7 +479,11 @@ pipeline {
             when {
                 equals expected: true, actual: params.UPDATE_DOCS
             }
+            options {
+                skipDefaultCheckout(true)
+            }
             steps {
+                unstash 'DOCS_ARCHIVE'
                 dir("build/docs/html/"){
                     bat "dir /s /B"
                     sshPublisher(
@@ -524,7 +529,42 @@ pipeline {
                     }
                 }
             }
+            post{
+                cleanup{
+                    deleteDir()
+                }
+            }
+        }
+    }
+    post{
+        cleanup{
+
+//            script {
+//                if(fileExists('source/setup.py')){
+//                    dir("source"){
+//                        try{
+//                            retry(3) {
+//                                bat "${WORKSPACE}\\venv\\Scripts\\python.exe setup.py clean --all"
+//                            }
+//                        } catch (Exception ex) {
+//                            echo "Unable to successfully run clean. Purging source directory."
+//                            deleteDir()
+//                        }
+//                    }
+//                }
+//                bat "dir"
+////                if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "dev"){
+////                    withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+////                        bat "venv\\Scripts\\devpi.exe login DS_Jenkins --password ${DEVPI_PASSWORD}"
+////                        bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+////                    }
+////
+////                    def devpi_remove_return_code = bat returnStatus: true, script:"venv\\Scripts\\devpi.exe remove -y ${env.pkg_name}==${PKG_VERSION}"
+////                    echo "Devpi remove exited with code ${devpi_remove_return_code}."
+////                }
+//            }
             cleanWs deleteDirs: true, patterns: [
+                    [pattern: 'source', type: 'INCLUDE'],
                     [pattern: 'certs', type: 'INCLUDE'],
                     [pattern: 'build*', type: 'INCLUDE'],
                     [pattern: '*tmp', type: 'INCLUDE'],
