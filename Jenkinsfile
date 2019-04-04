@@ -340,6 +340,7 @@ pipeline {
                                         deleteDirs: true,
                                         disableDeferredWipeout: true,
                                         patterns: [
+                                            [pattern: 'source', type: 'INCLUDE'],
                                             [pattern: '*tmp', type: 'INCLUDE'],
                                             [pattern: 'certs', type: 'INCLUDE']
                                             ]
@@ -508,6 +509,14 @@ pipeline {
                             )
                         ]
                     )
+                }
+            }
+            post{
+                cleanup{
+                    cleanWs deleteDirs: true, patterns: [
+                        [pattern: 'source', type: 'INCLUDE'],
+                        [pattern: 'build*', type: 'INCLUDE'],
+                        ]
                 }
             }
         }
