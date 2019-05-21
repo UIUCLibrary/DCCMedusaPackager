@@ -52,7 +52,7 @@ pipeline {
     stages {
         stage("Configure") {
             stages{
-                stage("Purge all existing data in workspace"){
+                stage("Purge All Existing Data in Workspace"){
                     when{
                         anyOf{
                             equals expected: true, actual: params.FRESH_WORKSPACE
@@ -71,14 +71,14 @@ pipeline {
                         }
                     }
                 }
-                stage("Stashing important files for later"){
+                stage("Stashing Important files for Later"){
                     steps{
                         dir("source"){
                             stash includes: 'deployment.yml', name: "Deployment"
                         }
                     }
                 }
-                stage("Creating virtualenv for building"){
+                stage("Creating Virtualenv for Building"){
                     steps{
                         bat "python -m venv venv"
                         script {
@@ -207,7 +207,7 @@ pipeline {
         }
         stage("Packaging") {
             parallel {
-                stage("Source and Wheel formats"){
+                stage("Source and Wheel Formats"){
                     steps{
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
@@ -287,7 +287,7 @@ pipeline {
                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
                     }
                 }
-                stage("Test DevPi packages") {
+                stage("Test DevPi Packages") {
                     parallel {
                         stage("Testing DevPi .zip Package with Python 3.6"){
                             environment {
@@ -303,7 +303,7 @@ pipeline {
 
                             }
                             stages{
-                                stage("Creating venv to test sdist"){
+                                stage("Creating venv to Test sdist"){
                                         steps {
                                             lock("system_python_${NODE_NAME}"){
                                                 bat "python -m venv venv\\venv36"
@@ -413,7 +413,7 @@ pipeline {
                     }
 
                 }
-                stage("Release to DevPi production") {
+                stage("Release to DevPi Production") {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
@@ -475,7 +475,7 @@ pipeline {
             }
         }
 
-        stage("Update online documentation") {
+        stage("Update Online Documentation") {
             agent any
             when {
                 equals expected: true, actual: params.UPDATE_DOCS
