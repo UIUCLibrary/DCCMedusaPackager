@@ -36,7 +36,7 @@ Links
 -----
 `Documentation page <http://www.library.illinois.edu/dccdocs/DCCMedusaPackager/>`_
 
-.. admonition:: Development Status
+.. admonition:: Development Status:
 
     .. image:: https://jenkins.library.illinois.edu/buildStatus/icon?job=OpenSourceProjects/DCCMedusaPackager/master
         :target: https://jenkins.library.illinois.edu/view/Henry/job/OpenSourceProjects/job/DCCMedusaPackager/job/master
