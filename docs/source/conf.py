@@ -69,7 +69,7 @@ author = metadata['author']
 # built documents.
 #
 # The short X.Y version.
-version_extractor = re.compile("\d+[.]\d+[.]\d+")
+version_extractor = re.compile(r"\d+[.]\d+[.]\d+")
 version = version_extractor.search(metadata["version"]).group(0)
 # The full version, including alpha/beta/rc tags.
 release = metadata["version"]

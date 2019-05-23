@@ -1,4 +1,6 @@
 import os
+import re
+
 import pytest
 from setuptools.config import read_configuration
 from cx_Freeze import setup, Executable
@@ -76,10 +78,14 @@ build_exe_options = {
     ],
     "excludes": ["tkinter"],
 }
+
+version_extractor = re.compile(r"\d+[.]\d+[.]\d+")
+version = version_extractor.search(metadata["version"]).group(0)
+
 setup(
     name=metadata["name"],
     description=metadata["description"],
-    version=metadata["version"],
+    version=version,
     author=metadata["author"],
     author_email=metadata["author_email"],
     packages=[
