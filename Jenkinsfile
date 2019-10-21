@@ -317,6 +317,9 @@ pipeline {
                 }
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                PKG_NAME = get_package_name("DIST-INFO", "MedusaPackager.dist-info/METADATA")
+                PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
+                DEVPI = credentials("DS_devpi")
             }
             stages{
                 stage("Installing DevPi Client"){
@@ -335,11 +338,6 @@ pipeline {
                     }
                 }
                 stage("Test DevPi Packages") {
-                    environment{
-                        PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
-                        PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-                        DEVPI = credentials("DS_devpi")
-                    }
                     parallel {
                         stage("Testing DevPi .zip Package with Python 3.6"){
                             environment {
