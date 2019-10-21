@@ -60,8 +60,6 @@ pipeline {
     parameters {
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
-        booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run Automated Unit Tests")
-        booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         // todo: set DEPLOY_DEVPI to default false
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -201,9 +199,6 @@ pipeline {
 
             parallel {
                 stage("PyTest"){
-                    when {
-                        equals expected: true, actual: params.UNIT_TESTS
-                    }
                     steps{
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
@@ -218,9 +213,6 @@ pipeline {
                     }
                 }
                 stage("MyPy"){
-                    when{
-                        equals expected: true, actual: params.ADDITIONAL_TESTS
-                    }
                     steps{
                         dir("source") {
                             bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
@@ -234,9 +226,6 @@ pipeline {
                     }
                 }
                 stage("Documentation"){
-                    when{
-                        equals expected: true, actual: params.ADDITIONAL_TESTS
-                    }
                     steps{
                         dir("source"){
                             bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v -w ${WORKSPACE}/logs/doctest.log --no-color"
