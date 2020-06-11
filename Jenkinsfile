@@ -299,10 +299,17 @@ pipeline {
         stage("Packaging") {
             parallel {
                 stage("Source and Wheel Formats"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps{
+//                         dir("source"){
+                            sh "python setup.py sdist --format zip -d dist bdist_wheel -d dist"
+//                             bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+//                         }
                         
                     }
                     post{
