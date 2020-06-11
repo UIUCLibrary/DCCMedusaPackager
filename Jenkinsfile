@@ -42,23 +42,24 @@ def get_package_name(stashName, metadataFile){
 
 
 pipeline {
-    agent {
-        label "Windows && Python3"
-    }
+    agent none
+//     agent {
+//         label "Windows && Python3"
+//     }
     options {
         disableConcurrentBuilds()  //each branch has 1 job running at a time
-        timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
-        checkoutToSubdirectory("source")
+//         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
+//         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '30', daysToKeepStr: '100', numToKeepStr: '100')
     }
-    environment {
-        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-    }
+//     environment {
+//         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+//     }
     triggers {
         cron('@daily')
     }
     parameters {
-        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
+//         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         // todo: set DEPLOY_DEVPI to default false
@@ -70,77 +71,95 @@ pipeline {
     }
 
     stages {
-        stage("Configure") {
-            stages{
-                stage("Purge All Existing Data in Workspace"){
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.FRESH_WORKSPACE
-                            triggeredBy "TimerTriggerCause"
-                        }
-                    }
-                    steps {
-                        deleteDir()
-                        dir("source"){
-                            checkout scm
-                        }
-                    }
-                    post{
-                        success {
-                            bat "dir /s /B"
-                        }
+        stage("Getting Distribution Info"){
+               agent {
+                    dockerfile {
+                        filename 'CI/docker/python/linux/Dockerfile'
+                        label 'linux && docker'
                     }
                 }
-                stage("Stashing Important files for Later"){
-                    steps{
-                        dir("source"){
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
-                    }
+
+                steps{
+                    sh "python setup.py dist_info"
                 }
-                stage("Getting Distribution Info"){
-                    environment{
-                        PATH = "${tool 'CPython-3.7'};$PATH"
-                    }
-                    steps{
-                        dir("source"){
-                            bat "python setup.py dist_info"
-                        }
-                    }
-                    post{
-                        success{
-                            dir("source"){
-                                stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
-                                archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
-                            }
-                        }
-                    }
-                }
-                stage("Creating Virtualenv for Building"){
-                    steps{
-                        bat "python -m venv venv"
-                        script {
-                            try {
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip"
-                            }
-                            catch (exc) {
-                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }
-                        }
-                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
-                    }
-                    post{
-                        success{
-                            bat "(if not exist logs mkdir logs) && venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
-                            archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
-                        }
+                post{
+                    success{
+                        stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
+                        archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
                     }
                 }
             }
-        }
+//         stage("Configure") {
+//             stages{
+//                 stage("Purge All Existing Data in Workspace"){
+//                     when{
+//                         anyOf{
+//                             equals expected: true, actual: params.FRESH_WORKSPACE
+//                             triggeredBy "TimerTriggerCause"
+//                         }
+//                     }
+//                     steps {
+//                         deleteDir()
+//                         dir("source"){
+//                             checkout scm
+//                         }
+//                     }
+//                     post{
+//                         success {
+//                             bat "dir /s /B"
+//                         }
+//                     }
+//                 }
+//                 stage("Stashing Important files for Later"){
+//                     steps{
+//                         dir("source"){
+//                             stash includes: 'deployment.yml', name: "Deployment"
+//                         }
+//                     }
+//                 }
+//                 stage("Getting Distribution Info"){
+//                     environment{
+//                         PATH = "${tool 'CPython-3.7'};$PATH"
+//                     }
+//                     steps{
+//                         dir("source"){
+//                             bat "python setup.py dist_info"
+//                         }
+//                     }
+//                     post{
+//                         success{
+//                             dir("source"){
+//                                 stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
+//                                 archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
+//                             }
+//                         }
+//                     }
+//                 }
+//                 stage("Creating Virtualenv for Building"){
+//                     steps{
+//                         bat "python -m venv venv"
+//                         script {
+//                             try {
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
+//                             }
+//                             catch (exc) {
+//                                 bat "${tool 'CPython-3.6'}\\python -m venv venv"
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+//                             }
+//                         }
+//                         bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                         bat "venv\\Scripts\\pip.exe install pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt --upgrade-strategy only-if-needed"
+//                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
+//                     }
+//                     post{
+//                         success{
+//                             bat "(if not exist logs mkdir logs) && venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
+//                             archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
         stage("Building") {
             stages{
                 stage("Building Python Package"){
