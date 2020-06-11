@@ -169,7 +169,11 @@ pipeline {
                         }
                     }
                     steps {
-                        sh "python setup.py build -b build  | tee logs/build.log"
+                        sh(label: "Building Python package",
+                           script: """mkdir -p logs
+                                      python setup.py build -b build  | tee logs/build.log
+                                      """
+                       )
 //                         powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
 
                     }
