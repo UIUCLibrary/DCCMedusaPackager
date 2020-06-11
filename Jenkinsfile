@@ -322,19 +322,21 @@ pipeline {
                 }
                 stage("Windows CX_Freeze MSI"){
                     when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_CX_FREEZE
-                            triggeredBy "TimerTriggerCause"
-                        }
+                        equals expected: true, actual: params.PACKAGE_CX_FREEZE
                         beforeAgent true
                     }
-                    environment {
-                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/windows/Dockerfile'
+                            label "windows && docker"
+                        }
                     }
                     steps{
-                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
-                        dir("source"){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
+                        timeout(10){
+                            bat(
+                                label: "Freezing to msi installer",
+                                script:"python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d dist"
+                                )
                         }
 
 
@@ -348,6 +350,34 @@ pipeline {
                         }
                     }
                 }
+//                 stage("Windows CX_Freeze MSI"){
+//                     when{
+//                         anyOf{
+//                             equals expected: true, actual: params.PACKAGE_CX_FREEZE
+//                             triggeredBy "TimerTriggerCause"
+//                         }
+//                         beforeAgent true
+//                     }
+//                     environment {
+//                         PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
+//                     }
+//                     steps{
+//                         bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
+//                         dir("source"){
+//                             bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
+//                         }
+//
+//
+//                     }
+//                     post{
+//                         success{
+//                             dir("dist") {
+//                                 stash includes: "*.msi", name: "msi"
+//                             }
+//                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+//                         }
+//                     }
+//                 }
             }
         }
 
