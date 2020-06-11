@@ -189,14 +189,21 @@ pipeline {
                     }
                 }
                 stage("Building Sphinx Documentation"){
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                        }
+                    }
                     environment{
                         PKG_NAME = get_package_name("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                         PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                     }
+
                     steps {
                             sh (
                                 label: "Building docs on ${env.NODE_NAME}",
-                                script:"python setup.py build_sphinx --build-dir build/docs -w logs/build_sphinx.log"
+                                script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log"
                             )
 //                         echo "Building docs on ${env.NODE_NAME}"
 //                         dir("source"){
