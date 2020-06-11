@@ -440,6 +440,7 @@ triggers {
             }
             options{
                 timestamps()
+                lock("MedusaPackager-devpi")
             }
             environment{
                 DEVPI = credentials("DS_devpi")
