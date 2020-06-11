@@ -326,6 +326,7 @@ pipeline {
                             equals expected: true, actual: params.PACKAGE_CX_FREEZE
                             triggeredBy "TimerTriggerCause"
                         }
+                        beforeAgent true
                     }
                     environment {
                         PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
