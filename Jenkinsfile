@@ -78,7 +78,6 @@ pipeline {
                         label 'linux && docker'
                     }
                 }
-
                 steps{
                     sh "python setup.py dist_info"
                 }
@@ -163,10 +162,15 @@ pipeline {
         stage("Building") {
             stages{
                 stage("Building Python Package"){
-                    steps {
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps {
+                        sh "python setup.py build -b build  | tee logs/build.log"
+//                         powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
 
                     }
                     post{
@@ -178,9 +182,6 @@ pipeline {
                                     ]
                                 )
                         }
-                        failure{
-                            echo "Failed to build Python package"
-                        }
                     }
                 }
                 stage("Building Sphinx Documentation"){
@@ -189,10 +190,14 @@ pipeline {
                         PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                     }
                     steps {
-                        echo "Building docs on ${env.NODE_NAME}"
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
-                        }
+                            sh (
+                                label: "Building docs on ${env.NODE_NAME}",
+                                script:"python setup.py build_sphinx --build-dir build/docs -w logs/build_sphinx.log"
+                            )
+//                         echo "Building docs on ${env.NODE_NAME}"
+//                         dir("source"){
+//                             powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+//                         }
                     }
                     post{
                         always {
