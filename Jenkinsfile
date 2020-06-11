@@ -39,30 +39,76 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
+def CONFIGURATIONS = [
+    "3.6": [
+            package_testing: [
+                whl: [
+                    pkgRegex: "*.whl",
+                ],
+                sdist: [
+                    pkgRegex: "*.zip",
+                ]
+            ],
+            test_docker_image: "python:3.6-windowsservercore",
+            tox_env: "py36",
+            devpi_wheel_regex: "cp36"
+
+        ],
+    "3.7": [
+            package_testing: [
+                whl: [
+                    pkgRegex: "*.whl",
+                ],
+                sdist:[
+                    pkgRegex: "*.zip",
+                ]
+            ],
+            test_docker_image: "python:3.7",
+            tox_env: "py37",
+            devpi_wheel_regex: "cp37"
+        ],
+    "3.8": [
+            package_testing: [
+                whl: [
+                    pkgRegex: "*.whl",
+                ],
+                sdist:[
+                    pkgRegex: "*.zip",
+                ]
+            ],
+            test_docker_image: "python:3.8",
+            tox_env: "py38",
+            devpi_wheel_regex: "cp38"
+        ]
+]
 
 
 pipeline {
-    agent {
-        label "Windows && Python3"
-    }
+    agent none
+//     agent {
+//         label "Windows && Python3"
+//     }
     options {
-        disableConcurrentBuilds()  //each branch has 1 job running at a time
-        timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
-        checkoutToSubdirectory("source")
+//         disableConcurrentBuilds()  //each branch has 1 job running at a time
+//         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
+//         checkoutToSubdirectory("source")
         buildDiscarder logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '30', daysToKeepStr: '100', numToKeepStr: '100')
     }
-    environment {
-        PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-    }
-    triggers {
-        cron('@daily')
+//     environment {
+//         PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+//     }
+//     triggers {
+//         cron('@daily')
+//     }
+triggers {
+       parameterizedCron '@daily % DEPLOY_DEVPI=true'
     }
     parameters {
-        booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
+//         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         // todo: set DEPLOY_DEVPI to default false
-        booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
@@ -70,84 +116,110 @@ pipeline {
     }
 
     stages {
-        stage("Configure") {
-            stages{
-                stage("Purge All Existing Data in Workspace"){
-                    when{
-                        anyOf{
-                            equals expected: true, actual: params.FRESH_WORKSPACE
-                            triggeredBy "TimerTriggerCause"
-                        }
-                    }
-                    steps {
-                        deleteDir()
-                        dir("source"){
-                            checkout scm
-                        }
-                    }
-                    post{
-                        success {
-                            bat "dir /s /B"
-                        }
+        stage("Getting Distribution Info"){
+               agent {
+                    dockerfile {
+                        filename 'CI/docker/python/linux/Dockerfile'
+                        label 'linux && docker'
                     }
                 }
-                stage("Stashing Important files for Later"){
-                    steps{
-                        dir("source"){
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
-                    }
+                steps{
+                    sh "python setup.py dist_info"
                 }
-                stage("Getting Distribution Info"){
-                    environment{
-                        PATH = "${tool 'CPython-3.7'};$PATH"
-                    }
-                    steps{
-                        dir("source"){
-                            bat "python setup.py dist_info"
-                        }
-                    }
-                    post{
-                        success{
-                            dir("source"){
-                                stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
-                                archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
-                            }
-                        }
-                    }
-                }
-                stage("Creating Virtualenv for Building"){
-                    steps{
-                        bat "python -m venv venv"
-                        script {
-                            try {
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip"
-                            }
-                            catch (exc) {
-                                bat "${tool 'CPython-3.6'}\\python -m venv venv"
-                                bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
-                            }
-                        }
-                        bat "venv\\Scripts\\pip.exe install -U setuptools"
-                        bat "venv\\Scripts\\pip.exe install pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt --upgrade-strategy only-if-needed"
-                        bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
-                    }
-                    post{
-                        success{
-                            bat "(if not exist logs mkdir logs) && venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
-                            archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
-                        }
+                post{
+                    success{
+                        stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
+                        archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
                     }
                 }
             }
-        }
+//         stage("Configure") {
+//             stages{
+//                 stage("Purge All Existing Data in Workspace"){
+//                     when{
+//                         anyOf{
+//                             equals expected: true, actual: params.FRESH_WORKSPACE
+//                             triggeredBy "TimerTriggerCause"
+//                         }
+//                     }
+//                     steps {
+//                         deleteDir()
+//                         dir("source"){
+//                             checkout scm
+//                         }
+//                     }
+//                     post{
+//                         success {
+//                             bat "dir /s /B"
+//                         }
+//                     }
+//                 }
+//                 stage("Stashing Important files for Later"){
+//                     steps{
+//                         dir("source"){
+//                             stash includes: 'deployment.yml', name: "Deployment"
+//                         }
+//                     }
+//                 }
+//                 stage("Getting Distribution Info"){
+//                     environment{
+//                         PATH = "${tool 'CPython-3.7'};$PATH"
+//                     }
+//                     steps{
+//                         dir("source"){
+//                             bat "python setup.py dist_info"
+//                         }
+//                     }
+//                     post{
+//                         success{
+//                             dir("source"){
+//                                 stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
+//                                 archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
+//                             }
+//                         }
+//                     }
+//                 }
+//                 stage("Creating Virtualenv for Building"){
+//                     steps{
+//                         bat "python -m venv venv"
+//                         script {
+//                             try {
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip"
+//                             }
+//                             catch (exc) {
+//                                 bat "${tool 'CPython-3.6'}\\python -m venv venv"
+//                                 bat "call venv\\Scripts\\python.exe -m pip install -U pip --no-cache-dir"
+//                             }
+//                         }
+//                         bat "venv\\Scripts\\pip.exe install -U setuptools"
+//                         bat "venv\\Scripts\\pip.exe install pytest pytest-cov lxml flake8 sphinx==1.6.7 wheel -r source\\requirements.txt -r source\\requirements-dev.txt --upgrade-strategy only-if-needed"
+//                         bat "venv\\Scripts\\pip.exe install \"tox>=3.7\""
+//                     }
+//                     post{
+//                         success{
+//                             bat "(if not exist logs mkdir logs) && venv\\Scripts\\pip.exe list > ${WORKSPACE}\\logs\\pippackages_venv_${NODE_NAME}.log"
+//                             archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
         stage("Building") {
             stages{
                 stage("Building Python Package"){
-                    steps {
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps {
+                        sh(label: "Building Python package",
+                           script: """mkdir -p logs
+                                      python setup.py build -b build  | tee logs/build.log
+                                      """
+                       )
+//                         powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
 
                     }
                     post{
@@ -159,21 +231,31 @@ pipeline {
                                     ]
                                 )
                         }
-                        failure{
-                            echo "Failed to build Python package"
-                        }
                     }
                 }
                 stage("Building Sphinx Documentation"){
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
+                        }
+                    }
                     environment{
                         PKG_NAME = get_package_name("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                         PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                     }
+
                     steps {
-                        echo "Building docs on ${env.NODE_NAME}"
-                        dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
-                        }
+                            sh (
+                                label: "Building docs on ${env.NODE_NAME}",
+                                script: """mkdir -p logs
+                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
+                                           """
+                            )
+//                         echo "Building docs on ${env.NODE_NAME}"
+//                         dir("source"){
+//                             powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build_sphinx --build-dir ${WORKSPACE}\\build\\docs | tee ${WORKSPACE}\\logs\\build_sphinx.log"
+//                         }
                     }
                     post{
                         always {
@@ -199,11 +281,15 @@ pipeline {
 
             parallel {
                 stage("PyTest"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
-
+                    }
+                    steps{
+                        sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+//                         bat "${WORKSPACE}\\venv\\Scripts\\pytest.exe --junitxml=${WORKSPACE}/reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:${WORKSPACE}/reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
                     }
                     post {
                         always{
@@ -213,10 +299,15 @@ pipeline {
                     }
                 }
                 stage("MyPy"){
-                    steps{
-                        dir("source") {
-                            bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps{
+                        sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+//                         bat "${WORKSPACE}\\venv\\Scripts\\mypy.exe -p MedusaPackager --junit-xml=${WORKSPACE}/junit-${env.NODE_NAME}-mypy.xml --html-report ${WORKSPACE}/reports/mypy_html"
                     }
                     post{
                         always {
@@ -226,10 +317,19 @@ pipeline {
                     }
                 }
                 stage("Documentation"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v -w ${WORKSPACE}/logs/doctest.log --no-color"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps{
+                            sh """mkdir -p logs
+                                  python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
+                                  """
+//                         dir("source"){
+//                             bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe -b doctest docs\\source ${WORKSPACE}\\build\\docs -d ${WORKSPACE}\\build\\docs\\doctrees -v -w ${WORKSPACE}/logs/doctest.log --no-color"
+//                         }
                     }
                     post{
                         always {
@@ -244,10 +344,17 @@ pipeline {
         stage("Packaging") {
             parallel {
                 stage("Source and Wheel Formats"){
-                    steps{
-                        dir("source"){
-                            bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/linux/Dockerfile'
+                            label 'linux && docker'
                         }
+                    }
+                    steps{
+//                         dir("source"){
+                            sh "python setup.py sdist --format zip -d dist bdist_wheel -d dist"
+//                             bat "${WORKSPACE}\\venv\\scripts\\python.exe setup.py sdist --format zip -d ${WORKSPACE}\\dist bdist_wheel -d ${WORKSPACE}\\dist"
+//                         }
                         
                     }
                     post{
@@ -260,18 +367,21 @@ pipeline {
                 }
                 stage("Windows CX_Freeze MSI"){
                     when{
-                        anyOf{
-                            equals expected: true, actual: params.PACKAGE_CX_FREEZE
-                            triggeredBy "TimerTriggerCause"
+                        equals expected: true, actual: params.PACKAGE_CX_FREEZE
+                        beforeAgent true
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/python/windows/Dockerfile'
+                            label "windows && docker"
                         }
                     }
-                    environment {
-                        PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
-                    }
                     steps{
-                        bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
-                        dir("source"){
-                            bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
+                        timeout(10){
+                            bat(
+                                label: "Freezing to msi installer",
+                                script:"python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d dist"
+                                )
                         }
 
 
@@ -285,208 +395,434 @@ pipeline {
                         }
                     }
                 }
+//                 stage("Windows CX_Freeze MSI"){
+//                     when{
+//                         anyOf{
+//                             equals expected: true, actual: params.PACKAGE_CX_FREEZE
+//                             triggeredBy "TimerTriggerCause"
+//                         }
+//                         beforeAgent true
+//                     }
+//                     environment {
+//                         PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};$PATH"
+//                     }
+//                     steps{
+//                         bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-dev.txt -r source\\requirements-freeze.txt"
+//                         dir("source"){
+//                             bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir ../build/msi -d ${WORKSPACE}\\dist"
+//                         }
+//
+//
+//                     }
+//                     post{
+//                         success{
+//                             dir("dist") {
+//                                 stash includes: "*.msi", name: "msi"
+//                             }
+//                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
+//                         }
+//                     }
+//                 }
             }
         }
-
-        stage("Deploy to Devpi"){
+        stage("Deploy to DevPi") {
             when {
                 allOf{
                     anyOf{
                         equals expected: true, actual: params.DEPLOY_DEVPI
-                        triggeredBy "TimerTriggerCause"
                     }
                     anyOf {
                         equals expected: "master", actual: env.BRANCH_NAME
                         equals expected: "dev", actual: env.BRANCH_NAME
                     }
                 }
+                beforeAgent true
             }
             options{
                 timestamps()
-                }
+                lock("MedusaPackager-devpi")
+            }
             environment{
-                PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
-                PKG_NAME = get_package_name("DIST-INFO", "MedusaPackager.dist-info/METADATA")
-                PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
                 DEVPI = credentials("DS_devpi")
             }
             stages{
-                stage("Installing DevPi Client"){
-                    steps{
-                        bat "pip install devpi-client"
+                stage("Deploy to Devpi Staging") {
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            label 'linux&&docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                          }
                     }
-                }
-                stage("Uploading to Package to DevPi Staging") {
-
-
                     steps {
                         unstash 'DOCS_ARCHIVE'
                         unstash 'PYTHON_PACKAGES'
-
-                        bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+                        sh(
+                                label: "Connecting to DevPi Server",
+                                script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                            )
+                        sh(
+                            label: "Uploading to DevPi Staging",
+                            script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
+devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
+                        )
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: "devpi/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE']
+                                ]
+                            )
+                        }
                     }
                 }
-                stage("Test DevPi Packages") {
-                    parallel {
-                        stage("Testing DevPi .zip Package with Python 3.6"){
-                            environment {
-                                PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+                stage("Test DevPi packages") {
+                    matrix {
+                        axes {
+                            axis {
+                                name 'FORMAT'
+                                values 'zip', "whl"
                             }
-                            agent {
-                                node {
-                                    label "Windows && Python3"
-                                }
+                            axis {
+                                name 'PYTHON_VERSION'
+                                values '3.6', "3.7", "3.8"
                             }
-                            options {
-                                skipDefaultCheckout(true)
-
-                            }
-                            stages{
-                                stage("Creating venv to Test sdist"){
-                                        steps {
-                                            lock("system_python_${NODE_NAME}"){
-                                                bat "python -m venv venv\\venv36"
-                                            }
-                                            bat 'venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install "tox<3.7" devpi-client'
-                                        }
-
-                                }
-                                stage("Testing DevPi zip Package"){
-
-                                    environment {
-                                        PATH = "${WORKSPACE}\\venv\\venv36\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-                                    }
-                                    steps {
-                                        echo "Testing Source zip package in devpi"
-
+                        }
+                        agent {
+                          dockerfile {
+                            additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
+                            filename 'CI/docker/deploy/devpi/test/windows/Dockerfile'
+                            label 'windows && docker'
+                          }
+                        }
+                        stages{
+                            stage("Testing DevPi Package"){
+                                steps{
+                                    script{
                                         timeout(10){
-                                            devpiTest(
-                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-                                                url: "https://devpi.library.illinois.edu",
-                                                index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${env.PKG_NAME}",
-                                                pkgVersion: "${env.PKG_VERSION}",
-                                                pkgRegex: "zip",
-                                                detox: false
+                                            unstash "DIST-INFO"
+                                            def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
+                                            bat(
+                                                label: "Connecting to Devpi Server",
+                                                script: "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
+                                            )
+                                            bat(
+                                                label: "Testing ${FORMAT} package stored on DevPi with Python version ${PYTHON_VERSION}",
+                                                script: "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
                                             )
                                         }
                                     }
                                 }
-                            }
-                            post {
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                            [pattern: 'source', type: 'INCLUDE'],
-                                            [pattern: '*tmp', type: 'INCLUDE'],
-                                            [pattern: 'certs', type: 'INCLUDE']
+                                post{
+                                    cleanup{
+                                        cleanWs(
+                                            deleteDirs: true,
+                                            patterns: [
+                                                [pattern: "dist/", type: 'INCLUDE'],
+                                                [pattern: "certs/", type: 'INCLUDE'],
+                                                [pattern: "MedusaPackager.dist-info/", type: 'INCLUDE'],
+                                                [pattern: 'build/', type: 'INCLUDE']
                                             ]
-                                    )
-                                }
-                            }
-
-                        }
-                        stage("Testing DevPi .whl Package with Python 3.6"){
-                            agent {
-                                node {
-                                    label "Windows && Python3"
-                                }
-                            }
-
-                            options {
-                                skipDefaultCheckout(true)
-                            }
-                            stages{
-                                stage("Creating venv to Test py36 .whl"){
-                                    environment {
-                                        PATH = "${tool 'CPython-3.6'};$PATH"
+                                        )
                                     }
-                                    steps {
-                                        lock("system_python_${NODE_NAME}"){
-                                            bat "(if not exist venv\\36 mkdir venv\\36) && python -m venv venv\\36"
-                                        }
-                                        bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
-                                    }
-
-                                }
-                                stage("Testing DevPi .whl Package with Python 3.6"){
-                                    options{
-                                        timeout(10)
-                                    }
-                                    environment {
-                                        PATH = "${WORKSPACE}\\venv\\36\\Scripts;$PATH"
-                                    }
-
-                                    steps {
-
-                                        devpiTest(
-                                                devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
-                                                url: "https://devpi.library.illinois.edu",
-                                                index: "${env.BRANCH_NAME}_staging",
-                                                pkgName: "${env.PKG_NAME}",
-                                                pkgVersion: "${env.PKG_VERSION}",
-                                                pkgRegex: "whl",
-                                                detox: false,
-                                                toxEnvironment: "py36"
-                                            )
-
-                                    }
-                                }
-                            }
-                            post {
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        disableDeferredWipeout: true,
-                                        patterns: [
-                                            [pattern: 'source', type: 'INCLUDE'],
-                                            [pattern: '*tmp', type: 'INCLUDE'],
-                                            [pattern: 'certs', type: 'INCLUDE']
-                                            ]
-                                    )
                                 }
                             }
                         }
                     }
-
                 }
-                stage("Release to DevPi Production") {
+                stage("Deploy to DevPi Production") {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
                             branch "master"
                         }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    agent {
+                        dockerfile {
+                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            label 'linux&&docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                          }
+                    }
+                    input {
+                        message 'Release to DevPi Production?'
                     }
                     steps {
-                        script {
-                            try{
-                                timeout(30) {
-                                    input "Release ${env.pkg_name} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${env.pkg_name}/${PKG_VERSION}) to DevPi Production? "
-                                }
-                                bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
-
-                                bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
-                                bat "venv\\Scripts\\devpi.exe push ${env.pkg_name}==${env.PKG_VERSION} production/release"
-                            } catch(err){
-                                echo "User response timed out. Packages not deployed to DevPi Production."
-                            }
+                        unstash "DIST-INFO"
+                        script{
+                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
+                            sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME} && devpi push ${props.Name}==${props.Version} production/release"
+                        }
+                    }
+                    post{
+                        success{
+                            jiraComment body: "Version ${PKG_VERSION} was added to https://devpi.library.illinois.edu/production/release index.", issueKey: "${params.JIRA_ISSUE_VALUE}"
                         }
                     }
                 }
+
             }
-            post {
-                success {
-                    echo "pushing to ${env.BRANCH_NAME}_staging"
-                    bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
-                    bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+            post{
+                success{
+                    node('linux && docker') {
+                       script{
+                            docker.build("uiucpresconpackager:devpi.${env.BUILD_ID}",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                                unstash "DIST-INFO"
+                                def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
+                                sh(
+                                    label: "Connecting to DevPi Server",
+                                    script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                )
+                                sh(
+                                    label: "Selecting to DevPi index",
+                                    script: "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
+                                )
+                                sh(
+                                    label: "Pushing package to DevPi index",
+                                    script:  "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ${WORKSPACE}/devpi"
+                                )
+                            }
+                       }
+                    }
                 }
                 cleanup{
-                    remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+                    node('linux && docker') {
+                       script{
+                            docker.build("uiucpresconpackager:devpi.${env.BUILD_ID}",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                                unstash "DIST-INFO"
+                                def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
+                                sh(
+                                    label: "Connecting to DevPi Server",
+                                    script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                                )
+                                sh(
+                                    label: "Selecting to DevPi index",
+                                    script: "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
+                                )
+                                sh(
+                                    label: "Removing package to DevPi index",
+                                    script: "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
+                                )
+                                cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: "dist/", type: 'INCLUDE'],
+                                        [pattern: "devpi/", type: 'INCLUDE'],
+                                        [pattern: 'build/', type: 'INCLUDE']
+                                    ]
+                                )
+                            }
+                       }
+                    }
                 }
             }
         }
+
+//         stage("Deploy to Devpi"){
+//             when {
+//                 allOf{
+//                     anyOf{
+//                         equals expected: true, actual: params.DEPLOY_DEVPI
+//                         triggeredBy "TimerTriggerCause"
+//                     }
+//                     anyOf {
+//                         equals expected: "master", actual: env.BRANCH_NAME
+//                         equals expected: "dev", actual: env.BRANCH_NAME
+//                     }
+//                 }
+//             }
+//             options{
+//                 timestamps()
+//                 }
+//             environment{
+//                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+//                 PKG_NAME = get_package_name("DIST-INFO", "MedusaPackager.dist-info/METADATA")
+//                 PKG_VERSION = get_package_version("DIST-INFO", "MedusaPackager.dist-info/METADATA")
+//                 DEVPI = credentials("DS_devpi")
+//             }
+//             stages{
+//                 stage("Installing DevPi Client"){
+//                     steps{
+//                         bat "pip install devpi-client"
+//                     }
+//                 }
+//                 stage("Uploading to Package to DevPi Staging") {
+//
+//
+//                     steps {
+//                         unstash 'DOCS_ARCHIVE'
+//                         unstash 'PYTHON_PACKAGES'
+//
+//                         bat "devpi use https://devpi.library.illinois.edu && devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging && devpi upload --from-dir dist"
+//                     }
+//                 }
+//                 stage("Test DevPi Packages") {
+//                     parallel {
+//                         stage("Testing DevPi .zip Package with Python 3.6"){
+//                             environment {
+//                                 PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+//                             }
+//                             agent {
+//                                 node {
+//                                     label "Windows && Python3"
+//                                 }
+//                             }
+//                             options {
+//                                 skipDefaultCheckout(true)
+//
+//                             }
+//                             stages{
+//                                 stage("Creating venv to Test sdist"){
+//                                         steps {
+//                                             lock("system_python_${NODE_NAME}"){
+//                                                 bat "python -m venv venv\\venv36"
+//                                             }
+//                                             bat 'venv\\venv36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\venv36\\Scripts\\pip.exe install setuptools --upgrade && venv\\venv36\\Scripts\\pip.exe install "tox<3.7" devpi-client'
+//                                         }
+//
+//                                 }
+//                                 stage("Testing DevPi zip Package"){
+//
+//                                     environment {
+//                                         PATH = "${WORKSPACE}\\venv\\venv36\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
+//                                     }
+//                                     steps {
+//                                         echo "Testing Source zip package in devpi"
+//
+//                                         timeout(10){
+//                                             devpiTest(
+//                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                                 url: "https://devpi.library.illinois.edu",
+//                                                 index: "${env.BRANCH_NAME}_staging",
+//                                                 pkgName: "${env.PKG_NAME}",
+//                                                 pkgVersion: "${env.PKG_VERSION}",
+//                                                 pkgRegex: "zip",
+//                                                 detox: false
+//                                             )
+//                                         }
+//                                     }
+//                                 }
+//                             }
+//                             post {
+//                                 cleanup{
+//                                     cleanWs(
+//                                         deleteDirs: true,
+//                                         disableDeferredWipeout: true,
+//                                         patterns: [
+//                                             [pattern: 'source', type: 'INCLUDE'],
+//                                             [pattern: '*tmp', type: 'INCLUDE'],
+//                                             [pattern: 'certs', type: 'INCLUDE']
+//                                             ]
+//                                     )
+//                                 }
+//                             }
+//
+//                         }
+//                         stage("Testing DevPi .whl Package with Python 3.6"){
+//                             agent {
+//                                 node {
+//                                     label "Windows && Python3"
+//                                 }
+//                             }
+//
+//                             options {
+//                                 skipDefaultCheckout(true)
+//                             }
+//                             stages{
+//                                 stage("Creating venv to Test py36 .whl"){
+//                                     environment {
+//                                         PATH = "${tool 'CPython-3.6'};$PATH"
+//                                     }
+//                                     steps {
+//                                         lock("system_python_${NODE_NAME}"){
+//                                             bat "(if not exist venv\\36 mkdir venv\\36) && python -m venv venv\\36"
+//                                         }
+//                                         bat "venv\\36\\Scripts\\python.exe -m pip install pip --upgrade && venv\\36\\Scripts\\pip.exe install setuptools --upgrade && venv\\36\\Scripts\\pip.exe install \"tox<3.7\" devpi-client"
+//                                     }
+//
+//                                 }
+//                                 stage("Testing DevPi .whl Package with Python 3.6"){
+//                                     options{
+//                                         timeout(10)
+//                                     }
+//                                     environment {
+//                                         PATH = "${WORKSPACE}\\venv\\36\\Scripts;$PATH"
+//                                     }
+//
+//                                     steps {
+//
+//                                         devpiTest(
+//                                                 devpiExecutable: "${powershell(script: '(Get-Command devpi).path', returnStdout: true).trim()}",
+//                                                 url: "https://devpi.library.illinois.edu",
+//                                                 index: "${env.BRANCH_NAME}_staging",
+//                                                 pkgName: "${env.PKG_NAME}",
+//                                                 pkgVersion: "${env.PKG_VERSION}",
+//                                                 pkgRegex: "whl",
+//                                                 detox: false,
+//                                                 toxEnvironment: "py36"
+//                                             )
+//
+//                                     }
+//                                 }
+//                             }
+//                             post {
+//                                 cleanup{
+//                                     cleanWs(
+//                                         deleteDirs: true,
+//                                         disableDeferredWipeout: true,
+//                                         patterns: [
+//                                             [pattern: 'source', type: 'INCLUDE'],
+//                                             [pattern: '*tmp', type: 'INCLUDE'],
+//                                             [pattern: 'certs', type: 'INCLUDE']
+//                                             ]
+//                                     )
+//                                 }
+//                             }
+//                         }
+//                     }
+//
+//                 }
+//                 stage("Release to DevPi Production") {
+//                     when {
+//                         allOf{
+//                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+//                             branch "master"
+//                         }
+//                     }
+//                     steps {
+//                         script {
+//                             try{
+//                                 timeout(30) {
+//                                     input "Release ${env.pkg_name} ${PKG_VERSION} (https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging/${env.pkg_name}/${PKG_VERSION}) to DevPi Production? "
+//                                 }
+//                                 bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
+//
+//                                 bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
+//                                 bat "venv\\Scripts\\devpi.exe push ${env.pkg_name}==${env.PKG_VERSION} production/release"
+//                             } catch(err){
+//                                 echo "User response timed out. Packages not deployed to DevPi Production."
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//             post {
+//                 success {
+//                     echo "pushing to ${env.BRANCH_NAME}_staging"
+//                     bat "devpi use https://devpi.library.illinois.edu/${env.BRANCH_NAME}_staging"
+//                     bat "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && venv\\Scripts\\devpi.exe use http://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}_staging && venv\\Scripts\\devpi.exe push ${env.PKG_NAME}==${env.PKG_VERSION} DS_Jenkins/${env.BRANCH_NAME}"
+//                 }
+//                 cleanup{
+//                     remove_from_devpi("venv\\Scripts\\devpi.exe", "${env.PKG_NAME}", "${env.PKG_VERSION}", "/${env.DEVPI_USR}/${env.BRANCH_NAME}_staging", "${env.DEVPI_USR}", "${env.DEVPI_PSW}")
+//                 }
+//             }
+//         }
         stage("Deploy to SCCM") {
             when {
                 equals expected: true, actual: params.DEPLOY_SCCM
@@ -560,17 +896,17 @@ pipeline {
             }
         }
     }
-    post{
-        cleanup{
-            cleanWs deleteDirs: true, patterns: [
-                    [pattern: 'source', type: 'INCLUDE'],
-                    [pattern: 'certs', type: 'INCLUDE'],
-                    [pattern: 'build*', type: 'INCLUDE'],
-                    [pattern: '*tmp', type: 'INCLUDE'],
-                    [pattern: 'dist*', type: 'INCLUDE'],
-                    [pattern: 'logs*', type: 'INCLUDE'],
-                    [pattern: 'reports*', type: 'INCLUDE']
-                    ]
-        }
-    }
+//     post{
+//         cleanup{
+//             cleanWs deleteDirs: true, patterns: [
+//                     [pattern: 'source', type: 'INCLUDE'],
+//                     [pattern: 'certs', type: 'INCLUDE'],
+//                     [pattern: 'build*', type: 'INCLUDE'],
+//                     [pattern: '*tmp', type: 'INCLUDE'],
+//                     [pattern: 'dist*', type: 'INCLUDE'],
+//                     [pattern: 'logs*', type: 'INCLUDE'],
+//                     [pattern: 'reports*', type: 'INCLUDE']
+//                     ]
+//         }
+//     }
 }
