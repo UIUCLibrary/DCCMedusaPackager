@@ -203,7 +203,9 @@ pipeline {
                     steps {
                             sh (
                                 label: "Building docs on ${env.NODE_NAME}",
-                                script: "python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log"
+                                script: """mkdir -p logs
+                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
+                                           """
                             )
 //                         echo "Building docs on ${env.NODE_NAME}"
 //                         dir("source"){
