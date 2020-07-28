@@ -100,7 +100,7 @@ pipeline {
 //     triggers {
 //         cron('@daily')
 //     }
-triggers {
+// triggers {
       
     parameters {
 //         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
@@ -895,6 +895,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
             }
         }
     }
+
 //     post{
 //         cleanup{
 //             cleanWs deleteDirs: true, patterns: [
