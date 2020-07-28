@@ -101,8 +101,7 @@ pipeline {
 //         cron('@daily')
 //     }
 triggers {
-       parameterizedCron '@daily % DEPLOY_DEVPI=true'
-    }
+      
     parameters {
 //         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
