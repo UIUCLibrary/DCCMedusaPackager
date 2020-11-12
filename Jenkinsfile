@@ -102,29 +102,6 @@ pipeline {
     }
 
     stages {
-        stage("Run Tox"){
-            when{
-                equals expected: true, actual: params.TEST_RUN_TOX
-            }
-            steps {
-                script{
-                    def windowsJobs
-                    def linuxJobs
-                    stage("Scanning Tox Environments"){
-                        parallel(
-                            "Linux":{
-                                linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
-                            },
-                            "Windows":{
-                                windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
-                            },
-                            failFast: true
-                        )
-                    }
-                    parallel(windowsJobs + linuxJobs)
-                }
-            }
-        }
         stage("Getting Distribution Info"){
                agent {
                     dockerfile {
@@ -211,62 +188,88 @@ pipeline {
                 }
             }
         }
-        stage("Tests") {
+        stage("Checks"){
+            stages{
+                stage("Tests") {
+                    parallel {
+                        stage("Run Tox"){
+                            when{
+                                equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                            steps {
+                                script{
+                                    def windowsJobs
+                                    def linuxJobs
+                                    stage("Scanning Tox Environments"){
+                                        parallel(
+                                            "Linux":{
+                                                linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+                                            },
+                                            "Windows":{
+                                                windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
+                                            },
+                                            failFast: true
+                                        )
+                                    }
+                                    parallel(windowsJobs + linuxJobs)
+                                }
+                            }
+                        }
+                        stage("PyTest"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                            }
+                            post {
+                                always{
+                                    junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                }
+                            }
+                        }
+                        stage("MyPy"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                            }
+                            post{
+                                always {
+                                    junit "junit-${env.NODE_NAME}-mypy.xml"
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                }
+                            }
+                        }
+                        stage("Documentation"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                    sh """mkdir -p logs
+                                          python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
+                                          """
+                            }
+                            post{
+                                always {
+                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
 
-            parallel {
-                stage("PyTest"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                        sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
-                    }
-                    post {
-                        always{
-                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                        }
-                    }
-                }
-                stage("MyPy"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                        sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                    }
-                    post{
-                        always {
-                            junit "junit-${env.NODE_NAME}-mypy.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                        }
-                    }
-                }
-                stage("Documentation"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                            sh """mkdir -p logs
-                                  python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
-                                  """
-                    }
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
+                                }
+                            }
 
                         }
                     }
-
                 }
             }
         }
