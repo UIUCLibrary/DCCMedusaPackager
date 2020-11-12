@@ -81,7 +81,12 @@ def CONFIGURATIONS = [
             devpi_wheel_regex: "cp38"
         ]
 ]
+def tox
 
+node(){
+    checkout scm
+    tox = load("ci/jenkins/scripts/tox.groovy")
+}
 
 pipeline {
     agent none
