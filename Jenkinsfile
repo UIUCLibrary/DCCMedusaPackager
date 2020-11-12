@@ -90,9 +90,6 @@ node(){
 
 pipeline {
     agent none
-    options {
-        buildDiscarder logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '30', daysToKeepStr: '100', numToKeepStr: '100')
-    }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
@@ -104,10 +101,33 @@ pipeline {
     }
 
     stages {
+//         stage("Run Tox"){
+//             when{
+// //                 equals expected: true, actual: params.TEST_RUN_TOX
+//             }
+//             steps {
+//                 script{
+//                     def windowsJobs
+//                     def linuxJobs
+//                     stage("Scanning Tox Environments"){
+//                         parallel(
+//                             "Linux":{
+//                                 linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+//                             },
+//                             "Windows":{
+//                                 windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
+//                             },
+//                             failFast: true
+//                         )
+//                     }
+//                     parallel(windowsJobs + linuxJobs)
+//                 }
+//             }
+//         }
         stage("Getting Distribution Info"){
                agent {
                     dockerfile {
-                        filename 'CI/docker/python/linux/Dockerfile'
+                        filename 'CI/docker/python/linux/jenkins/Dockerfile'
                         label 'linux && docker'
                     }
                 }
@@ -126,7 +146,7 @@ pipeline {
                 stage("Building Python Package"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -153,7 +173,7 @@ pipeline {
                 stage("Building Sphinx Documentation"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -196,7 +216,7 @@ pipeline {
                 stage("PyTest"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -213,7 +233,7 @@ pipeline {
                 stage("MyPy"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -230,7 +250,7 @@ pipeline {
                 stage("Documentation"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -254,7 +274,7 @@ pipeline {
                 stage("Source and Wheel Formats"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -275,7 +295,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/windows/Dockerfile'
+                            filename 'CI/docker/python/windows/jenkins/Dockerfile'
                             label "windows && docker"
                         }
                     }
