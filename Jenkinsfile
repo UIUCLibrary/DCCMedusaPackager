@@ -93,6 +93,7 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -102,9 +103,9 @@ pipeline {
 
     stages {
         stage("Run Tox"){
-//             when{
-//                 equals expected: true, actual: params.TEST_RUN_TOX
-//             }
+            when{
+                equals expected: true, actual: params.TEST_RUN_TOX
+            }
             steps {
                 script{
                     def windowsJobs
