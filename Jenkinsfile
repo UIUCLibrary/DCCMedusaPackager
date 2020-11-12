@@ -81,16 +81,19 @@ def CONFIGURATIONS = [
             devpi_wheel_regex: "cp38"
         ]
 ]
+def tox
 
+node(){
+    checkout scm
+    tox = load("ci/jenkins/scripts/tox.groovy")
+}
 
 pipeline {
     agent none
-    options {
-        buildDiscarder logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '30', daysToKeepStr: '100', numToKeepStr: '100')
-    }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "Medusa Packager", description: "Name given to the project")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Request deployment of MSI installer to SCCM")
@@ -102,7 +105,7 @@ pipeline {
         stage("Getting Distribution Info"){
                agent {
                     dockerfile {
-                        filename 'CI/docker/python/linux/Dockerfile'
+                        filename 'ci/docker/python/linux/jenkins/Dockerfile'
                         label 'linux && docker'
                     }
                 }
@@ -121,7 +124,7 @@ pipeline {
                 stage("Building Python Package"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -148,7 +151,7 @@ pipeline {
                 stage("Building Sphinx Documentation"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -185,62 +188,88 @@ pipeline {
                 }
             }
         }
-        stage("Tests") {
+        stage("Checks"){
+            stages{
+                stage("Tests") {
+                    parallel {
+                        stage("Run Tox"){
+                            when{
+                                equals expected: true, actual: params.TEST_RUN_TOX
+                            }
+                            steps {
+                                script{
+                                    def windowsJobs
+                                    def linuxJobs
+                                    stage("Scanning Tox Environments"){
+                                        parallel(
+                                            "Linux":{
+                                                linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+                                            },
+                                            "Windows":{
+                                                windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
+                                            },
+                                            failFast: true
+                                        )
+                                    }
+                                    parallel(windowsJobs + linuxJobs)
+                                }
+                            }
+                        }
+                        stage("PyTest"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                            }
+                            post {
+                                always{
+                                    junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                }
+                            }
+                        }
+                        stage("MyPy"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                            }
+                            post{
+                                always {
+                                    junit "junit-${env.NODE_NAME}-mypy.xml"
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                }
+                            }
+                        }
+                        stage("Documentation"){
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker'
+                                }
+                            }
+                            steps{
+                                    sh """mkdir -p logs
+                                          python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
+                                          """
+                            }
+                            post{
+                                always {
+                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
 
-            parallel {
-                stage("PyTest"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                        sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
-                    }
-                    post {
-                        always{
-                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                        }
-                    }
-                }
-                stage("MyPy"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                        sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                    }
-                    post{
-                        always {
-                            junit "junit-${env.NODE_NAME}-mypy.xml"
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                        }
-                    }
-                }
-                stage("Documentation"){
-                    agent {
-                        dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
-                            label 'linux && docker'
-                        }
-                    }
-                    steps{
-                            sh """mkdir -p logs
-                                  python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
-                                  """
-                    }
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
+                                }
+                            }
 
                         }
                     }
-
                 }
             }
         }
@@ -249,7 +278,7 @@ pipeline {
                 stage("Source and Wheel Formats"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -270,7 +299,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/windows/Dockerfile'
+                            filename 'ci/docker/python/windows/jenkins/Dockerfile'
                             label "windows && docker"
                         }
                     }
@@ -319,7 +348,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -365,7 +394,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                         agent {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-                            filename 'CI/docker/deploy/devpi/test/windows/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
                             label 'windows && docker'
                           }
                         }
@@ -415,7 +444,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -442,7 +471,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("uiucpresconpackager:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
@@ -464,7 +493,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("uiucpresconpackager:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
