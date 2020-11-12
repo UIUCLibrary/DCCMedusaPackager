@@ -117,7 +117,7 @@ def generateToxReport(tox_env, toxResultFile){
     return reportSections.join("\n")
 }
 
-def getToxTestsParallel2(args = [:]){
+def getToxTestsParallel(args = [:]){
     script{
         def envNamePrefix = args['stagePrefix']
         def label = args['label']
