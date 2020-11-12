@@ -118,11 +118,11 @@ def generateToxReport(tox_env, toxResultFile){
 }
 
 def getToxTestsParallel2(args = [:]){
-    return getToxTestsParallel(args['stagePrefix'], args['label'], args['dockerfile'], args['dockerBuildArgs'])
-}
-
-def getToxTestsParallel(envNamePrefix, label, dockerfile, dockerArgs){
     script{
+        def envNamePrefix = args['stagePrefix']
+        def label = args['label']
+        def dockerfile = args['dockerfile']
+        def dockerArgs = args['dockerBuildArgs']
         def TOX_RESULT_FILE_NAME = "tox_result.json"
         def envs
         def originalNodeLabel
