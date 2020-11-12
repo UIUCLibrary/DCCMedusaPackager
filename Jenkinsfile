@@ -203,10 +203,10 @@ pipeline {
                                     stage("Scanning Tox Environments"){
                                         parallel(
                                             "Linux":{
-                                                linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+                                                linuxJobs = tox.getToxTestsParallel2(stagePrefix: "Tox Linux", label: "linux && docker", dockerfile: "ci/docker/python/linux/tox/Dockerfile", dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
                                             },
                                             "Windows":{
-                                                windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
+                                                windowsJobs = tox.getToxTestsParallel2(stagePrefix: "Tox Windows", label: "windows && docker", dockerfile: "ci/docker/python/windows/tox/Dockerfile", dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
                                             },
                                             failFast: true
                                         )
@@ -223,9 +223,6 @@ pipeline {
                                 }
                             }
                             steps{
-                                script{
-                                    tox.getToxTestsParallel2(stagePrefix: "Tox Linux", label: "linux && docker", dockerfile: "ci/docker/python/linux/tox/Dockerfile", dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
-                                }
                                 sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
                             }
                             post {
