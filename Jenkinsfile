@@ -101,33 +101,34 @@ pipeline {
     }
 
     stages {
-//         stage("Run Tox"){
-//             when{
-// //                 equals expected: true, actual: params.TEST_RUN_TOX
-//             }
-//             steps {
-//                 script{
-//                     def windowsJobs
-//                     def linuxJobs
-//                     stage("Scanning Tox Environments"){
-//                         parallel(
-//                             "Linux":{
-//                                 linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
-//                             },
+        stage("Run Tox"){
+            when{
+//                 equals expected: true, actual: params.TEST_RUN_TOX
+            }
+            steps {
+                script{
+                    def windowsJobs
+                    def linuxJobs
+                    stage("Scanning Tox Environments"){
+                        parallel(
+                            "Linux":{
+                                linuxJobs = tox.getToxTestsParallel("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+                            },
 //                             "Windows":{
 //                                 windowsJobs = tox.getToxTestsParallel("Tox Windows", "windows && docker", "ci/docker/python/windows/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE")
 //                             },
-//                             failFast: true
-//                         )
-//                     }
+                            failFast: true
+                        )
+                    }
+                    parallel(linuxJobs)
 //                     parallel(windowsJobs + linuxJobs)
-//                 }
-//             }
-//         }
+                }
+            }
+        }
         stage("Getting Distribution Info"){
                agent {
                     dockerfile {
-                        filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                        filename 'ci/docker/python/linux/jenkins/Dockerfile'
                         label 'linux && docker'
                     }
                 }
@@ -146,7 +147,7 @@ pipeline {
                 stage("Building Python Package"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -173,7 +174,7 @@ pipeline {
                 stage("Building Sphinx Documentation"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -216,7 +217,7 @@ pipeline {
                 stage("PyTest"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -233,7 +234,7 @@ pipeline {
                 stage("MyPy"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -250,7 +251,7 @@ pipeline {
                 stage("Documentation"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -274,7 +275,7 @@ pipeline {
                 stage("Source and Wheel Formats"){
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/linux/jenkins/Dockerfile'
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
                             label 'linux && docker'
                         }
                     }
@@ -295,7 +296,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/python/windows/jenkins/Dockerfile'
+                            filename 'ci/docker/python/windows/jenkins/Dockerfile'
                             label "windows && docker"
                         }
                     }
@@ -344,7 +345,7 @@ pipeline {
                 stage("Deploy to Devpi Staging") {
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -390,7 +391,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                         agent {
                           dockerfile {
                             additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-                            filename 'CI/docker/deploy/devpi/test/windows/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
                             label 'windows && docker'
                           }
                         }
@@ -440,7 +441,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     }
                     agent {
                         dockerfile {
-                            filename 'CI/docker/deploy/devpi/deploy/Dockerfile'
+                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
                             label 'linux&&docker'
                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                           }
@@ -467,7 +468,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("uiucpresconpackager:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
@@ -489,7 +490,7 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("uiucpresconpackager:devpi",'-f ./CI/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
+                            docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
                                 unstash "DIST-INFO"
                                 def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
