@@ -223,6 +223,9 @@ pipeline {
                                 }
                             }
                             steps{
+                                script{
+                                    tox.getToxTestsParallel2("Tox Linux", "linux && docker", "ci/docker/python/linux/tox/Dockerfile", "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL")
+                                }
                                 sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
                             }
                             post {
