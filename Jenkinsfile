@@ -85,7 +85,7 @@ def tox
 
 node(){
     checkout scm
-    tox = load("ci/jenkins/scripts/tox.groovy")
+    tox = load("CI/jenkins/scripts/tox.groovy")
 }
 
 pipeline {
