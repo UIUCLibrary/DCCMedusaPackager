@@ -126,45 +126,18 @@ def getToxTestsParallel(args = [:]){
         def TOX_RESULT_FILE_NAME = "tox_result.json"
         def envs
         def originalNodeLabel
+        def dockerImageName = "${currentBuild.fullProjectName}:tox".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
         node(label){
             originalNodeLabel = env.NODE_NAME
             checkout scm
-            def dockerImageName = "tox${currentBuild.projectName}".replaceAll("-", "").toLowerCase()
             def dockerImage = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} .")
-            try{
-                dockerImage.inside{
-                    envs = getToxEnvs()
-                }
-                if(isUnix()){
-                    sh(
-                        label: "Removing Docker Image used to run tox",
-                        script: "docker image ls ${dockerImageName}"
-                    )
-                } else {
-                    bat(
-                        label: "Removing Docker Image used to run tox",
-                        script: """docker image ls ${dockerImageName}
-                                   """
-                    )
-                }
-            } finally {
-                if(isUnix()){
-                sh(
-                        label: "Removing Docker Image used to run tox",
-                        script: "docker image rm ${dockerImage.id}"
-                    )
-                } else {
-                    bat(
-                        label: "Removing Docker Image used to run tox",
-                        script: "docker image rm ${dockerImage.id}"
-                    )
-                }
+            dockerImage.inside{
+                envs = getToxEnvs()
             }
         }
         echo "Found tox environments for ${envs.join(', ')}"
         def dockerImageForTesting
         node(originalNodeLabel){
-            def dockerImageName = "tox"
             checkout scm
             dockerImageForTesting = docker.build(dockerImageName, "-f ${dockerfile} ${dockerArgs} . ")
 
@@ -216,7 +189,7 @@ def getToxTestsParallel(args = [:]){
                                 )
                                 throw e
                             }
-                            def checksReportText = generateToxReport(tox_env, 'tox_result.json')
+                            def checksReportText = generateToxReport(tox_env, TOX_RESULT_FILE_NAME)
                             publishChecks(
                                     name: githubChecksName,
                                     summary: 'Use Tox to test installed package',

@@ -81,12 +81,8 @@ def CONFIGURATIONS = [
             devpi_wheel_regex: "cp38"
         ]
 ]
-def tox
 
-node(){
-    checkout scm
-    tox = load("ci/jenkins/scripts/tox.groovy")
-}
+
 
 pipeline {
     agent none
@@ -198,8 +194,13 @@ pipeline {
                             }
                             steps {
                                 script{
-                                    def windowsJobs
-                                    def linuxJobs
+                                    def tox
+                                    node(){
+                                        checkout scm
+                                        tox = load("ci/jenkins/scripts/tox.groovy")
+                                    }
+                                    def windowsJobs = [:]
+                                    def linuxJobs = [:]
                                     stage("Scanning Tox Environments"){
                                         parallel(
                                             "Linux Tox Scanning":{
