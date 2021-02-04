@@ -39,7 +39,7 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-def CONFIGURATIONS = [
+CONFIGURATIONS = [
     "3.6": [
             package_testing: [
                 whl: [
@@ -349,7 +349,6 @@ pipeline {
                 beforeAgent true
             }
             options{
-                timestamps()
                 lock("MedusaPackager-devpi")
             }
             environment{
