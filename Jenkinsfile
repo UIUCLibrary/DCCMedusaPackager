@@ -164,22 +164,22 @@ pipeline {
     }
     stages {
         stage("Getting Distribution Info"){
-               agent {
-                    dockerfile {
-                        filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                        label 'linux && docker'
-                    }
-                }
-                steps{
-                    sh "python setup.py dist_info"
-                }
-                post{
-                    success{
-                        stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
-                        archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
-                    }
+           agent {
+                dockerfile {
+                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                    label 'linux && docker'
                 }
             }
+            steps{
+                sh "python setup.py dist_info"
+            }
+            post{
+                success{
+                    stash includes: "MedusaPackager.dist-info/**", name: 'DIST-INFO'
+                    archiveArtifacts artifacts: "MedusaPackager.dist-info/**"
+                }
+            }
+        }
         stage("Building") {
             stages{
                 stage("Building Python Package"){
