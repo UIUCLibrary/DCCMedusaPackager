@@ -83,6 +83,48 @@ CONFIGURATIONS = [
 ]
 
 
+def startup(){
+    stage("Getting Distribution Info"){
+        node('linux && docker') {
+            timeout(2){
+                ws{
+                    checkout scm
+                    try{
+                        docker.image('python').inside {
+                            sh(
+                               label: "Running setup.py with dist_info",
+                               script: """python --version
+                                          python setup.py dist_info
+                                       """
+                            )
+                            stash includes: "*.dist-info/**", name: 'DIST-INFO'
+                            archiveArtifacts artifacts: "*.dist-info/**"
+                        }
+                    } finally{
+                        deleteDir()
+                    }
+                }
+            }
+        }
+    }
+}
+def get_props(){
+    stage('Reading Package Metadata'){
+        node(){
+            unstash 'DIST-INFO'
+            def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
+            def metadata = readProperties(interpolate: true, file: metadataFile.path )
+            echo """Version = ${metadata.Version}
+Name = ${metadata.Name}
+"""
+            return metadata
+        }
+    }
+}
+
+
+startup()
+props = get_props()
 
 pipeline {
     agent none
@@ -96,7 +138,6 @@ pipeline {
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update the documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "DCCMedusaPackager", description: 'The directory that the docs should be saved under')
     }
-
     stages {
         stage("Getting Distribution Info"){
                agent {
@@ -404,8 +445,6 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                                 steps{
                                     script{
                                         timeout(10){
-                                            unstash "DIST-INFO"
-                                            def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                             bat(
                                                 label: "Connecting to Devpi Server",
                                                 script: "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
@@ -456,7 +495,6 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     steps {
                         unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "speedwagon.dist-info/METADATA"
                             sh "devpi login ${env.DEVPI_USR} --password ${env.DEVPI_PSW} && devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME} && devpi push ${props.Name}==${props.Version} production/release"
                         }
                     }
@@ -473,8 +511,6 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     node('linux && docker') {
                        script{
                             docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -495,8 +531,6 @@ devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
                     node('linux && docker') {
                        script{
                             docker.build("uiucpresconpackager:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'MedusaPackager.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
