@@ -63,50 +63,6 @@ def get_package_name(stashName, metadataFile){
     }
 }
 
-CONFIGURATIONS = [
-    "3.6": [
-            package_testing: [
-                whl: [
-                    pkgRegex: "*.whl",
-                ],
-                sdist: [
-                    pkgRegex: "*.zip",
-                ]
-            ],
-            test_docker_image: "python:3.6-windowsservercore",
-            tox_env: "py36",
-            devpi_wheel_regex: "cp36"
-
-        ],
-    "3.7": [
-            package_testing: [
-                whl: [
-                    pkgRegex: "*.whl",
-                ],
-                sdist:[
-                    pkgRegex: "*.zip",
-                ]
-            ],
-            test_docker_image: "python:3.7",
-            tox_env: "py37",
-            devpi_wheel_regex: "cp37"
-        ],
-    "3.8": [
-            package_testing: [
-                whl: [
-                    pkgRegex: "*.whl",
-                ],
-                sdist:[
-                    pkgRegex: "*.zip",
-                ]
-            ],
-            test_docker_image: "python:3.8",
-            tox_env: "py38",
-            devpi_wheel_regex: "cp38"
-        ]
-]
-
-
 def startup(){
     stage("Getting Distribution Info"){
         node('linux && docker') {
