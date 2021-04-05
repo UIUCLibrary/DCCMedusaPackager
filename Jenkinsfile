@@ -184,44 +184,6 @@ pipeline {
                 }
             }
         }
-        stage("Run Tox"){
-            when{
-                equals expected: true, actual: params.TEST_RUN_TOX
-            }
-            steps {
-                script{
-                    def tox
-                    node(){
-                        checkout scm
-                        tox = load("ci/jenkins/scripts/tox.groovy")
-                    }
-                    def windowsJobs = [:]
-                    def linuxJobs = [:]
-                    stage("Scanning Tox Environments"){
-                        parallel(
-                            "Linux Tox Scanning":{
-                                linuxJobs = tox.getToxTestsParallel(
-                                        stagePrefix: "Tox Linux",
-                                        label: "linux && docker",
-                                        dockerfile: "ci/docker/python/linux/tox/Dockerfile",
-                                        dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
-                                    )
-                            },
-                            "Windows Tox Scanning":{
-                                windowsJobs = tox.getToxTestsParallel(
-                                        stagePrefix: "Tox Windows",
-                                        label: "windows && docker",
-                                        dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                        dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
-                                    )
-                            },
-                            failFast: true
-                        )
-                    }
-                    parallel(windowsJobs + linuxJobs)
-                }
-            }
-        }
         stage("Checks"){
             stages{
                 stage("Code Quality") {
@@ -268,9 +230,46 @@ pipeline {
 
                                         }
                                     }
-
                                 }
                             }
+                        }
+                    }
+                }
+                stage("Run Tox"){
+                    when{
+                        equals expected: true, actual: params.TEST_RUN_TOX
+                    }
+                    steps {
+                        script{
+                            def tox
+                            node(){
+                                checkout scm
+                                tox = load("ci/jenkins/scripts/tox.groovy")
+                            }
+                            def windowsJobs = [:]
+                            def linuxJobs = [:]
+                            stage("Scanning Tox Environments"){
+                                parallel(
+                                    "Linux Tox Scanning":{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                stagePrefix: "Tox Linux",
+                                                label: "linux && docker",
+                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+                                            )
+                                    },
+                                    "Windows Tox Scanning":{
+                                        windowsJobs = tox.getToxTestsParallel(
+                                                stagePrefix: "Tox Windows",
+                                                label: "windows && docker",
+                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                dockerBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE"
+                                            )
+                                    },
+                                    failFast: true
+                                )
+                            }
+                            parallel(windowsJobs + linuxJobs)
                         }
                     }
                 }
