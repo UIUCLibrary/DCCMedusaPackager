@@ -224,61 +224,53 @@ pipeline {
         }
         stage("Checks"){
             stages{
-                stage("Tests") {
-                    parallel {
-                        stage("PyTest"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker'
-                                }
-                            }
-                            steps{
-                                sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
-                            }
-                            post {
-                                always{
-                                    junit "reports/junit-${env.NODE_NAME}-pytest.xml"
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                                }
-                            }
+                stage("Code Quality") {
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                            label 'linux && docker'
                         }
-                        stage("MyPy"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker'
+                    }
+                    stages{
+                        stage('Run Tests'){
+                            parallel {
+                                stage("PyTest"){
+                                    steps{
+                                        sh "python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=MedusaPackager" //  --basetemp={envtmpdir}"
+                                    }
+                                    post {
+                                        always{
+                                            junit "reports/junit-${env.NODE_NAME}-pytest.xml"
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                        }
+                                    }
                                 }
-                            }
-                            steps{
-                                sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
-                            }
-                            post{
-                                always {
-                                    junit "junit-${env.NODE_NAME}-mypy.xml"
-                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                stage("MyPy"){
+                                    steps{
+                                        sh "mypy -p MedusaPackager --junit-xml=junit-${env.NODE_NAME}-mypy.xml --html-report reports/mypy_html"
+                                    }
+                                    post{
+                                        always {
+                                            junit "junit-${env.NODE_NAME}-mypy.xml"
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                        stage("Documentation"){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                    label 'linux && docker'
-                                }
-                            }
-                            steps{
-                                    sh """mkdir -p logs
-                                          python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
-                                          """
-                            }
-                            post{
-                                always {
-                                    recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
+                                stage("Documentation"){
+                                    steps{
+                                            sh """mkdir -p logs
+                                                  python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v -w logs/doctest.log --no-color
+                                                  """
+                                    }
+                                    post{
+                                        always {
+                                            recordIssues(tools: [sphinxBuild(pattern: 'logs/doctest.log')])
+
+                                        }
+                                    }
 
                                 }
                             }
-
                         }
                     }
                 }
