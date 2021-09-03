@@ -1,6 +1,7 @@
 tox>=3.7
 pytest
 mypy
+types-setuptools
 pytest-cov
 wheel
 sphinx
